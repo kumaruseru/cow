@@ -392,6 +392,7 @@
                 function allowOnlyNumbers(input) {
                     let isComposing = false;
                     let lastValidValue = '';
+                    let focusChangeTimeout = null;
 
                     // Theo dõi trạng thái composing của IME
                     input.addEventListener('compositionstart', function(e) {
@@ -411,6 +412,30 @@
                         }, 0);
                     });
 
+                    // Xử lý khi focus ra khỏi field
+                    input.addEventListener('blur', function(e) {
+                        // Nếu đang compose, force kết thúc composition
+                        if (isComposing) {
+                            isComposing = false;
+                            this.classList.remove('composing');
+                            // Clear bất kỳ text nào không phải số
+                            setTimeout(() => {
+                                this.value = this.value.replace(/[^0-9]/g, '');
+                            }, 10);
+                        }
+                    });
+
+                    // Xử lý khi focus vào field
+                    input.addEventListener('focus', function(e) {
+                        // Clear bất kỳ composition state nào từ field khác
+                        setTimeout(() => {
+                            // Chỉ giữ lại số, loại bỏ text từ IME của field khác
+                            if (this.value && !/^\d*$/.test(this.value)) {
+                                this.value = this.value.replace(/[^0-9]/g, '');
+                            }
+                        }, 50);
+                    });
+
                     input.addEventListener('input', function(e) {
                         // Không xử lý khi đang trong quá trình composing của IME
                         if (isComposing) {
@@ -418,6 +443,11 @@
                         }
                         
                         // Chỉ giữ lại các ký tự số
+                        const newValue = this.value.replace(/[^0-9]/g, '');
+                        if (this.value !== newValue) {
+                            this.value = newValue;
+                        }
+                    });
                         const newValue = this.value.replace(/[^0-9]/g, '');
                         if (this.value !== newValue) {
                             this.value = newValue;
@@ -448,22 +478,28 @@
                             const id = this.id;
                             if (id === 'birth-month') {
                                 e.preventDefault();
-                                setTimeout(() => {
-                                    const dayInput = document.getElementById('birth-day');
-                                    if (dayInput) {
-                                        dayInput.focus();
-                                        dayInput.setSelectionRange(dayInput.value.length, dayInput.value.length);
-                                    }
-                                }, 10);
+                                // Đảm bảo không có composition trước khi chuyển focus
+                                if (!isComposing) {
+                                    setTimeout(() => {
+                                        const dayInput = document.getElementById('birth-day');
+                                        if (dayInput) {
+                                            dayInput.focus();
+                                            dayInput.setSelectionRange(dayInput.value.length, dayInput.value.length);
+                                        }
+                                    }, 10);
+                                }
                             } else if (id === 'birth-year') {
                                 e.preventDefault();
-                                setTimeout(() => {
-                                    const monthInput = document.getElementById('birth-month');
-                                    if (monthInput) {
-                                        monthInput.focus();
-                                        monthInput.setSelectionRange(monthInput.value.length, monthInput.value.length);
-                                    }
-                                }, 10);
+                                // Đảm bảo không có composition trước khi chuyển focus
+                                if (!isComposing) {
+                                    setTimeout(() => {
+                                        const monthInput = document.getElementById('birth-month');
+                                        if (monthInput) {
+                                            monthInput.focus();
+                                            monthInput.setSelectionRange(monthInput.value.length, monthInput.value.length);
+                                        }
+                                    }, 10);
+                                }
                             }
                         }
                         
@@ -578,8 +614,14 @@
                     }
                     
                     input.addEventListener('input', function(e) {
-                        // Delay để đảm bảo IME hoàn thành xử lý
+                        // Delay để đảm bảo IME hoàn thành xử lý và không chuyển focus khi đang compose
                         setTimeout(() => {
+                            // Kiểm tra xem có field nào đang compose không
+                            const isAnyFieldComposing = document.querySelector('.form-input.composing');
+                            if (isAnyFieldComposing) {
+                                return; // Không xử lý auto-focus khi có field đang compose
+                            }
+                            
                             const value = this.value;
                             
                             // Auto-format: nếu nhập 1 chữ số
@@ -590,9 +632,12 @@
                                     this.value = '0' + value;
                                     setTimeout(() => {
                                         validate(); // Validate sau khi format
-                                        const monthInput = document.getElementById('birth-month');
-                                        if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                            monthInput.focus();
+                                        // Chỉ chuyển focus nếu không có field nào đang compose
+                                        if (!document.querySelector('.form-input.composing')) {
+                                            const monthInput = document.getElementById('birth-month');
+                                            if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                                monthInput.focus();
+                                            }
                                         }
                                     }, 50);
                                 }
@@ -609,15 +654,17 @@
                             else if (value.length === 2) {
                                 validate();
                                 
-                                // Nếu valid, chuyển sang tháng
-                                const dayValue = parseInt(value);
-                                if (dayValue >= 1 && dayValue <= 31) {
-                                    setTimeout(() => {
-                                        const monthInput = document.getElementById('birth-month');
-                                        if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                            monthInput.focus();
-                                        }
-                                    }, 50);
+                                // Nếu valid, chuyển sang tháng (chỉ khi không có field nào đang compose)
+                                if (!document.querySelector('.form-input.composing')) {
+                                    const dayValue = parseInt(value);
+                                    if (dayValue >= 1 && dayValue <= 31) {
+                                        setTimeout(() => {
+                                            const monthInput = document.getElementById('birth-month');
+                                            if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                                monthInput.focus();
+                                            }
+                                        }, 50);
+                                    }
                                 }
                             }
                             else {
@@ -677,8 +724,14 @@
                     }
                     
                     input.addEventListener('input', function(e) {
-                        // Delay để đảm bảo IME hoàn thành xử lý
+                        // Delay để đảm bảo IME hoàn thành xử lý và không chuyển focus khi đang compose
                         setTimeout(() => {
+                            // Kiểm tra xem có field nào đang compose không
+                            const isAnyFieldComposing = document.querySelector('.form-input.composing');
+                            if (isAnyFieldComposing) {
+                                return; // Không xử lý auto-focus khi có field đang compose
+                            }
+                            
                             const value = this.value;
                             
                             // Auto-format: nếu nhập 1 chữ số và blur hoặc nhập tiếp
@@ -689,7 +742,7 @@
                                     this.value = '0' + value;
                                     setTimeout(() => {
                                         validate(); // Validate sau khi format
-                                        if (num <= 12) { // Chỉ chuyển field nếu tháng hợp lệ
+                                        if (num <= 12 && !document.querySelector('.form-input.composing')) { // Chỉ chuyển field nếu tháng hợp lệ và không có field nào đang compose
                                             const yearInput = document.getElementById('birth-year');
                                             if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
                                                 yearInput.focus();
@@ -710,15 +763,17 @@
                             else if (value.length === 2) {
                                 validate();
                                 
-                                // Nếu valid, chuyển sang năm
-                                const monthValue = parseInt(value);
-                                if (monthValue >= 1 && monthValue <= 12) {
-                                    setTimeout(() => {
-                                        const yearInput = document.getElementById('birth-year');
-                                        if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                            yearInput.focus();
-                                        }
-                                    }, 50);
+                                // Nếu valid, chuyển sang năm (chỉ khi không có field nào đang compose)
+                                if (!document.querySelector('.form-input.composing')) {
+                                    const monthValue = parseInt(value);
+                                    if (monthValue >= 1 && monthValue <= 12) {
+                                        setTimeout(() => {
+                                            const yearInput = document.getElementById('birth-year');
+                                            if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                                yearInput.focus();
+                                            }
+                                        }, 50);
+                                    }
                                 }
                             }
                             else {
