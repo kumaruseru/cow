@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cow Social Network - Smart Posts System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .post-composer {
+            padding: 25px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .post-composer h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .textarea-large {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+        
+        .analysis-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .analysis-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .sentiment-positive { color: #28a745; }
+        .sentiment-negative { color: #dc3545; }
+        .sentiment-neutral { color: #6c757d; }
+        
+        .posts-feed {
+            padding: 0;
+        }
+        
+        .post-card {
+            border-bottom: 1px solid #eee;
+            padding: 25px;
+            transition: background-color 0.3s;
+        }
+        
+        .post-card:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .post-meta {
+            flex: 1;
+        }
+        
+        .post-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .post-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .post-content {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .post-tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+        
+        .post-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .action-btn.liked {
+            color: #dc3545;
+        }
+        
+        .post-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .filters {
+            margin-bottom: 20px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .search-box {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .analytics-sidebar {
+            padding: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .engagement-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .engagement-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+            transition: width 0.3s;
+        }
+        
+        .log-area {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+        
+        .reactions-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .reaction-btn {
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .reaction-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        .reaction-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐄 Cow Social Network</h1>
+            <p>Smart Posts Management System with AI Analysis</p>
+            <div style="margin-top: 15px;">
+                <button class="btn" onclick="connect()">Connect</button>
+                <span id="connection-status" style="margin-left: 15px; color: #666;">Disconnected</span>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <!-- Left Sidebar - Filters -->
+            <div class="sidebar">
+                <h3>📊 Filters & Search</h3>
+                
+                <div class="filters">
+                    <div class="input-group">
+                        <label>Search Posts:</label>
+                        <input type="text" id="search-input" placeholder="Search titles, content, tags..." 
+                               onkeyup="debounceSearch()">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Category:</label>
+                        <select id="category-filter" onchange="filterPosts()">
+                            <option value="all">All Categories</option>
+                            <option value="technology">Technology</option>
+                            <option value="food">Food</option>
+                            <option value="travel">Travel</option>
+                            <option value="sports">Sports</option>
+                            <option value="music">Music</option>
+                            <option value="art">Art</option>
+                            <option value="science">Science</option>
+                            <option value="business">Business</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Sort By:</label>
+                        <select id="sort-filter" onchange="filterPosts()">
+                            <option value="createdAt">Latest</option>
+                            <option value="engagement">Most Engaging</option>
+                            <option value="likes">Most Liked</option>
+                            <option value="comments">Most Commented</option>
+                            <option value="views">Most Viewed</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-small" onclick="clearFilters()">Clear Filters</button>
+                </div>
+                
+                <div class="log-area" id="activity-log">
+                    <strong>Activity Log:</strong><br>
+                    System ready...
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Post Composer -->
+                <div class="post-composer">
+                    <h3>✍️ Create Smart Post</h3>
+                    
+                    <div class="input-group">
+                        <label>Title:</label>
+                        <input type="text" id="post-title" placeholder="What's on your mind?" 
+                               oninput="analyzeContent()">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Content:</label>
+                        <textarea id="post-content" class="textarea-large" 
+                                  placeholder="Share your thoughts, experiences, or questions..."
+                                  oninput="analyzeContent()"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <div class="input-group" style="flex: 1;">
+                            <label>Category:</label>
+                            <select id="post-category">
+                                <option value="general">General</option>
+                                <option value="technology">Technology</option>
+                                <option value="food">Food</option>
+                                <option value="travel">Travel</option>
+                                <option value="sports">Sports</option>
+                                <option value="music">Music</option>
+                                <option value="art">Art</option>
+                                <option value="science">Science</option>
+                                <option value="business">Business</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group" style="flex: 1;">
+                            <label>Privacy:</label>
+                            <select id="post-privacy">
+                                <option value="public">Public</option>
+                                <option value="friends">Friends Only</option>
+                                <option value="private">Private</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Tags:</label>
+                        <input type="text" id="tags-input" placeholder="Add tags (press Enter)" 
+                               onkeypress="handleTagInput(event)">
+                        <div class="tags-input" id="tags-container"></div>
+                    </div>
+                    
+                    <div class="analysis-panel" id="content-analysis" style="display: none;">
+                        <h4>🧠 Smart Analysis</h4>
+                        <div id="analysis-results"></div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="createPost()">📝 Create Post</button>
+                        <button class="btn btn-secondary" onclick="clearComposer()">Clear</button>
+                    </div>
+                </div>
+                
+                <!-- Posts Feed -->
+                <div class="posts-feed" id="posts-feed">
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        Loading posts...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Sidebar - Analytics -->
+            <div class="sidebar analytics-sidebar">
+                <h3>📈 Analytics</h3>
+                
+                <div class="stat-card">
+                    <div class="stat-number" id="total-posts">0</div>
+                    <div class="stat-label">Total Posts</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number" id="total-engagement">0</div>
+                    <div class="stat-label">Total Engagement</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number" id="avg-engagement">0%</div>
+                    <div class="stat-label">Avg Engagement Rate</div>
+                </div>
+                
+                <h4 style="margin: 20px 0 10px 0;">🏆 Top Categories</h4>
+                <div id="top-categories">
+                    <div style="color: #666; font-style: italic;">No data yet</div>
+                </div>
+                
+                <h4 style="margin: 20px 0 10px 0;">⚡ Real-time Feed</h4>
+                <div class="log-area" id="realtime-feed">
+                    <div style="color: #666; font-style: italic;">Waiting for updates...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = null;
+        let authToken = null;
+        let currentTags = [];
+        let searchTimeout = null;
+        let allPosts = [];
+        
+        // Connection and Auth
+        function connect() {
+            // Mock login
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'demo_user', password: 'demo123' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    authToken = data.data.token;
+                    document.getElementById('connection-status').textContent = 'Connected';
+                    document.getElementById('connection-status').style.color = '#28a745';
+                    
+                    // Connect socket
+                    socket = io();
+                    setupSocketEvents();
+                    
+                    // Load initial data
+                    loadPosts();
+                    loadAnalytics();
+                    
+                    logActivity('Connected successfully');
+                } else {
+                    logActivity('Connection failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                logActivity('Connection error: ' + error.message);
+            });
+        }
+        
+        function setupSocketEvents() {
+            socket.on('connect', () => {
+                socket.emit('authenticate', { token: authToken });
+                logActivity('Socket connected');
+            });
+            
+            socket.on('authenticated', () => {
+                logActivity('Socket authenticated');
+            });
+            
+            socket.on('new_post', (data) => {
+                logRealtimeActivity(`📝 ${data.authorName} created a new post: "${data.title}"`);
+                loadPosts(); // Refresh posts
+            });
+            
+            socket.on('new_comment', (data) => {
+                logRealtimeActivity(`💬 ${data.authorName} commented: "${data.content}"`);
+            });
+            
+            socket.on('post_liked', (data) => {
+                logRealtimeActivity(`❤️ ${data.userName} reacted with ${data.reactionType}`);
+            });
+        }
+        
+        // Content Analysis
+        function analyzeContent() {
+            const title = document.getElementById('post-title').value;
+            const content = document.getElementById('post-content').value;
+            
+            if (!content.trim()) {
+                document.getElementById('content-analysis').style.display = 'none';
+                return;
+            }
+            
+            // Simple client-side analysis
+            const wordCount = content.split(' ').filter(word => word.length > 0).length;
+            const readingTime = Math.ceil(wordCount / 200);
+            
+            // Sentiment analysis (simplified)
+            const positiveWords = ['good', 'great', 'awesome', 'amazing', 'love', 'excellent'];
+            const negativeWords = ['bad', 'terrible', 'awful', 'hate', 'horrible', 'worst'];
+            
+            const lowerContent = content.toLowerCase();
+            const positiveCount = positiveWords.filter(word => lowerContent.includes(word)).length;
+            const negativeCount = negativeWords.filter(word => lowerContent.includes(word)).length;
+            
+            let sentiment = 'neutral';
+            if (positiveCount > negativeCount) sentiment = 'positive';
+            else if (negativeCount > positiveCount) sentiment = 'negative';
+            
+            // Engagement prediction
+            let score = 50;
+            if (wordCount > 100 && wordCount < 300) score += 20;
+            if (sentiment === 'positive') score += 15;
+            if (title && title.includes('?')) score += 10;
+            
+            score = Math.max(0, Math.min(100, score));
+            
+            const analysisHtml = `
+                <div class="analysis-item">
+                    <span>Word Count:</span>
+                    <span>${wordCount} words</span>
+                </div>
+                <div class="analysis-item">
+                    <span>Reading Time:</span>
+                    <span>${readingTime} min</span>
+                </div>
+                <div class="analysis-item">
+                    <span>Sentiment:</span>
+                    <span class="sentiment-${sentiment}">${sentiment.toUpperCase()}</span>
+                </div>
+                <div class="analysis-item">
+                    <span>Engagement Prediction:</span>
+                    <span>${score}%</span>
+                </div>
+                <div class="engagement-bar">
+                    <div class="engagement-fill" style="width: ${score}%"></div>
+                </div>
+            `;
+            
+            document.getElementById('analysis-results').innerHTML = analysisHtml;
+            document.getElementById('content-analysis').style.display = 'block';
+        }
+        
+        // Tags Management
+        function handleTagInput(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const input = event.target;
+                const tag = input.value.trim();
+                
+                if (tag && !currentTags.includes(tag)) {
+                    currentTags.push(tag);
+                    input.value = '';
+                    renderTags();
+                }
+            }
+        }
+        
+        function renderTags() {
+            const container = document.getElementById('tags-container');
+            container.innerHTML = currentTags.map(tag => `
+                <div class="tag">
+                    ${tag}
+                    <span class="tag-remove" onclick="removeTag('${tag}')">×</span>
+                </div>
+            `).join('');
+        }
+        
+        function removeTag(tag) {
+            currentTags = currentTags.filter(t => t !== tag);
+            renderTags();
+        }
+        
+        // Post Creation
+        function createPost() {
+            const title = document.getElementById('post-title').value.trim();
+            const content = document.getElementById('post-content').value.trim();
+            const category = document.getElementById('post-category').value;
+            const privacy = document.getElementById('post-privacy').value;
+            
+            if (!title || !content) {
+                alert('Please fill in both title and content');
+                return;
+            }
+            
+            const postData = {
+                title,
+                content,
+                category,
+                privacy,
+                tags: currentTags
+            };
+            
+            fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(postData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logActivity('Post created successfully');
+                    clearComposer();
+                    loadPosts();
+                    loadAnalytics();
+                } else {
+                    logActivity('Post creation failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                logActivity('Post creation error: ' + error.message);
+            });
+        }
+        
+        function clearComposer() {
+            document.getElementById('post-title').value = '';
+            document.getElementById('post-content').value = '';
+            document.getElementById('post-category').value = 'general';
+            document.getElementById('post-privacy').value = 'public';
+            document.getElementById('tags-input').value = '';
+            currentTags = [];
+            renderTags();
+            document.getElementById('content-analysis').style.display = 'none';
+        }
+        
+        // Posts Loading and Display
+        function loadPosts() {
+            const category = document.getElementById('category-filter').value;
+            const sortBy = document.getElementById('sort-filter').value;
+            const search = document.getElementById('search-input').value;
+            
+            let url = '/api/posts?limit=20';
+            if (category !== 'all') url += `&category=${category}`;
+            if (sortBy) url += `&sortBy=${sortBy}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    allPosts = data.data.posts;
+                    renderPosts(allPosts);
+                } else {
+                    logActivity('Failed to load posts: ' + data.message);
+                }
+            })
+            .catch(error => {
+                logActivity('Error loading posts: ' + error.message);
+            });
+        }
+        
+        function renderPosts(posts) {
+            const feed = document.getElementById('posts-feed');
+            
+            if (posts.length === 0) {
+                feed.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h3>No posts found</h3>
+                        <p>Try adjusting your filters or create the first post!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            feed.innerHTML = posts.map(post => `
+                <div class="post-card" data-post-id="${post.id}">
+                    <div class="post-header">
+                        <div class="author-avatar">
+                            ${post.authorName.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div class="post-meta">
+                            <div class="post-title">${post.title}</div>
+                            <div class="post-info">
+                                by ${post.authorName} • ${formatDate(post.createdAt)} • ${post.category}
+                                ${post.isEdited ? ' • edited' : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="post-content">${post.content}</div>
+                    
+                    <div class="post-tags">
+                        ${post.tags.map(tag => `<span class="post-tag">#${tag}</span>`).join('')}
+                    </div>
+                    
+                    <div class="post-stats">
+                        <span>👁️ ${post.viewsCount} views</span>
+                        <span>❤️ ${post.likesCount} likes</span>
+                        <span>💬 ${post.commentsCount} comments</span>
+                        <span>📊 ${post.engagement.score}% engagement</span>
+                    </div>
+                    
+                    <div class="post-actions">
+                        <button class="action-btn" onclick="toggleLike('${post.id}', 'like')">
+                            ❤️ Like (${post.engagement.reactions.like})
+                        </button>
+                        <button class="action-btn" onclick="toggleLike('${post.id}', 'love')">
+                            😍 Love (${post.engagement.reactions.love})
+                        </button>
+                        <button class="action-btn" onclick="showComments('${post.id}')">
+                            💬 Comment
+                        </button>
+                        <button class="action-btn" onclick="viewAnalytics('${post.id}')">
+                            📊 Analytics
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Post Interactions
+        function toggleLike(postId, reactionType) {
+            fetch(`/api/posts/${postId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ reactionType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logActivity(`Reacted with ${reactionType}`);
+                    loadPosts(); // Refresh to show updated counts
+                } else {
+                    logActivity('Like failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                logActivity('Like error: ' + error.message);
+            });
+        }
+        
+        function viewAnalytics(postId) {
+            fetch(`/api/posts/${postId}/analytics`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const analytics = data.data;
+                    const modal = `
+                        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                                    background: rgba(0,0,0,0.5); z-index: 1000; display: flex; 
+                                    align-items: center; justify-content: center;" 
+                             onclick="this.remove()">
+                            <div style="background: white; padding: 30px; border-radius: 15px; 
+                                        max-width: 500px; width: 90%;" onclick="event.stopPropagation()">
+                                <h3>📊 Post Analytics</h3>
+                                <div style="margin: 20px 0;">
+                                    <strong>Performance Metrics:</strong><br>
+                                    Views: ${analytics.metrics.views}<br>
+                                    Engagement Rate: ${analytics.metrics.engagementRate}%<br>
+                                    Total Interactions: ${analytics.metrics.totalInteractions}
+                                </div>
+                                <div style="margin: 20px 0;">
+                                    <strong>Content Analysis:</strong><br>
+                                    Word Count: ${analytics.contentAnalysis.wordCount}<br>
+                                    Sentiment: ${analytics.contentAnalysis.sentiment}<br>
+                                    Engagement Prediction: ${analytics.contentAnalysis.engagementPrediction}%
+                                </div>
+                                <div style="margin: 20px 0;">
+                                    <strong>Performance Indicators:</strong><br>
+                                    ${analytics.performance.trending ? '🔥 Trending' : '📈 Normal'}<br>
+                                    ${analytics.performance.viral ? '💥 Viral' : '📊 Standard'}<br>
+                                    ${analytics.performance.quality ? '✨ High Quality' : '📝 Standard Quality'}
+                                </div>
+                                <button class="btn" onclick="this.parentElement.parentElement.remove()">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modal);
+                } else {
+                    logActivity('Analytics failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                logActivity('Analytics error: ' + error.message);
+            });
+        }
+        
+        // Search and Filtering
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filterPosts();
+            }, 500);
+        }
+        
+        function filterPosts() {
+            loadPosts();
+        }
+        
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('category-filter').value = 'all';
+            document.getElementById('sort-filter').value = 'createdAt';
+            loadPosts();
+        }
+        
+        // Analytics
+        function loadAnalytics() {
+            fetch('/api/test-posts')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('total-posts').textContent = data.stats.totalPosts;
+                    
+                    // Calculate engagement stats
+                    if (allPosts.length > 0) {
+                        const totalEngagement = allPosts.reduce((sum, post) => 
+                            sum + post.likesCount + post.commentsCount, 0);
+                        const avgEngagement = allPosts.reduce((sum, post) => 
+                            sum + post.engagement.score, 0) / allPosts.length;
+                        
+                        document.getElementById('total-engagement').textContent = totalEngagement;
+                        document.getElementById('avg-engagement').textContent = 
+                            Math.round(avgEngagement) + '%';
+                    }
+                    
+                    // Update categories
+                    updateTopCategories();
+                } else {
+                    logActivity('Analytics failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                logActivity('Analytics error: ' + error.message);
+            });
+        }
+        
+        function updateTopCategories() {
+            const categories = {};
+            allPosts.forEach(post => {
+                categories[post.category] = (categories[post.category] || 0) + 1;
+            });
+            
+            const sorted = Object.entries(categories)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            const html = sorted.map(([category, count]) => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>${category}</span>
+                    <span>${count}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('top-categories').innerHTML = html || 
+                '<div style="color: #666; font-style: italic;">No data yet</div>';
+        }
+        
+        // Utility Functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            return Math.floor(diff / 86400000) + 'd ago';
+        }
+        
+        function logActivity(message) {
+            const log = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `<br>[${timestamp}] ${message}`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function logRealtimeActivity(message) {
+            const feed = document.getElementById('realtime-feed');
+            const timestamp = new Date().toLocaleTimeString();
+            feed.innerHTML = `[${timestamp}] ${message}<br>` + feed.innerHTML;
+            
+            // Keep only last 10 items
+            const lines = feed.innerHTML.split('<br>');
+            if (lines.length > 10) {
+                feed.innerHTML = lines.slice(0, 10).join('<br>');
+            }
+        }
+        
+        // Auto-load on page ready
+        window.addEventListener('load', () => {
+            logActivity('Posts management system ready');
+            
+            // Auto-connect after 1 second
+            setTimeout(() => {
+                connect();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

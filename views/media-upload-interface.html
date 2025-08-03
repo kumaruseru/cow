@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cow Social - Media Upload System</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-section {
+            text-align: center;
+        }
+
+        .upload-zone {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            background: #fafafa;
+        }
+
+        .upload-zone:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.dragover {
+            border-color: #667eea;
+            background: #e8f0ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .preview-container {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .preview-item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .preview-video {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255,0,0,0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .media-gallery {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .gallery-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-video {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .gallery-info {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .gallery-actions {
+            margin-top: 10px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            margin: 2px;
+        }
+
+        .post-creator {
+            grid-column: 1 / -1;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            min-height: 120px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .selected-media {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .selected-media h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .selected-item {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .real-time-feed {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 300px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .feed-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .feed-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-online {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        .status-offline {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐄 Cow Social Media Upload System</h1>
+            <p>Upload và quản lý hình ảnh, video cho bài post của bạn</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="card upload-section">
+                <h2>📸 Upload Media Files</h2>
+                
+                <!-- Single Image Upload -->
+                <div class="upload-zone" id="imageUploadZone">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">Kéo thả hoặc click để chọn hình ảnh</div>
+                    <div class="upload-subtext">Hỗ trợ: JPEG, PNG, GIF, WebP (Tối đa 10MB)</div>
+                    <input type="file" id="imageInput" class="file-input" accept="image/*">
+                </div>
+                
+                <!-- Single Video Upload -->
+                <div class="upload-zone" id="videoUploadZone">
+                    <div class="upload-icon">🎬</div>
+                    <div class="upload-text">Kéo thả hoặc click để chọn video</div>
+                    <div class="upload-subtext">Hỗ trợ: MP4, WebM, AVI, MOV (Tối đa 100MB)</div>
+                    <input type="file" id="videoInput" class="file-input" accept="video/*">
+                </div>
+                
+                <!-- Multiple Files Upload -->
+                <div class="upload-zone" id="multipleUploadZone">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Upload nhiều file cùng lúc</div>
+                    <div class="upload-subtext">Chọn tối đa 10 hình ảnh</div>
+                    <input type="file" id="multipleInput" class="file-input" accept="image/*" multiple>
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Uploading...</div>
+                </div>
+                
+                <div class="preview-container" id="previewContainer"></div>
+                
+                <button class="btn" onclick="clearPreviews()">🗑️ Clear Previews</button>
+                <button class="btn btn-secondary" onclick="refreshGallery()">🔄 Refresh Gallery</button>
+            </div>
+
+            <!-- Media Gallery -->
+            <div class="card media-gallery">
+                <h2>🖼️ Media Gallery</h2>
+                <div style="margin-bottom: 15px;">
+                    <select id="mediaFilter" class="form-select" style="width: auto; display: inline-block;" onchange="filterMedia()">
+                        <option value="all">Tất cả file</option>
+                        <option value="image">Chỉ hình ảnh</option>
+                        <option value="video">Chỉ video</option>
+                    </select>
+                    <button class="btn btn-small" onclick="selectAllMedia()" style="margin-left: 10px;">Select All</button>
+                    <button class="btn btn-small btn-secondary" onclick="clearSelection()">Clear Selection</button>
+                </div>
+                <div class="gallery-grid" id="galleryGrid"></div>
+            </div>
+        </div>
+
+        <!-- Post Creator with Media -->
+        <div class="card post-creator">
+            <h2>✍️ Tạo bài post với Media</h2>
+            <form id="postForm">
+                <div class="form-group">
+                    <label for="postTitle">Tiêu đề bài post:</label>
+                    <input type="text" id="postTitle" class="form-input" placeholder="Nhập tiêu đề bài post...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="postContent">Nội dung:</label>
+                    <textarea id="postContent" class="form-textarea" placeholder="Chia sẻ suy nghĩ của bạn..."></textarea>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="postCategory">Danh mục:</label>
+                        <select id="postCategory" class="form-select">
+                            <option value="general">Tổng quát</option>
+                            <option value="technology">Công nghệ</option>
+                            <option value="travel">Du lịch</option>
+                            <option value="food">Ẩm thực</option>
+                            <option value="lifestyle">Lối sống</option>
+                            <option value="entertainment">Giải trí</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="postTags">Tags:</label>
+                        <input type="text" id="postTags" class="form-input" placeholder="tag1, tag2, tag3...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="postPrivacy">Quyền riêng tư:</label>
+                        <select id="postPrivacy" class="form-select">
+                            <option value="public">Công khai</option>
+                            <option value="friends">Bạn bè</option>
+                            <option value="private">Riêng tư</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="selected-media" id="selectedMediaContainer" style="display: none;">
+                    <h4>📎 Media đã chọn:</h4>
+                    <div id="selectedMediaList"></div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">🚀 Đăng bài</button>
+                    <button type="button" class="btn" onclick="saveDraft()">💾 Lưu nháp</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator">
+        <div id="connectionStatus" class="status-offline">🔴 Đang kết nối...</div>
+    </div>
+
+    <!-- Real-time Feed -->
+    <div class="real-time-feed" id="realTimeFeed">
+        <h4>📡 Live Activity</h4>
+        <div id="feedContent"></div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // Global variables
+        let socket;
+        let selectedMediaIds = new Set();
+        let uploadedFiles = [];
+        let currentUser = null;
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            setupEventListeners();
+            loadMediaGallery();
+            authenticateUser();
+        });
+
+        // Socket.IO initialization
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                addFeedItem('✅ Kết nối thành công tới server');
+            });
+            
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+                addFeedItem('❌ Mất kết nối tới server');
+            });
+            
+            socket.on('authenticated', (data) => {
+                currentUser = data.userId;
+                addFeedItem(`👤 Đăng nhập thành công: ${data.userId}`);
+            });
+            
+            socket.on('media_uploaded', (data) => {
+                addFeedItem(`📸 ${data.type === 'image' ? 'Hình ảnh' : 'Video'} mới được upload: ${data.filename}`);
+                refreshGallery();
+            });
+            
+            socket.on('multiple_media_uploaded', (data) => {
+                addFeedItem(`📁 Upload thành công ${data.count} files`);
+                refreshGallery();
+            });
+            
+            socket.on('new_post', (data) => {
+                const mediaInfo = data.hasMedia ? ` (${data.mediaCount} media files)` : '';
+                addFeedItem(`📝 Bài post mới: "${data.title}" bởi ${data.authorName}${mediaInfo}`);
+            });
+            
+            socket.on('user_uploading', (data) => {
+                addFeedItem(`⏳ ${data.userId} đang upload: ${data.filename} (${data.progress}%)`);
+            });
+        }
+
+        // User authentication
+        function authenticateUser() {
+            const token = `demo_token_${Date.now()}`;
+            socket.emit('authenticate', { token });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(isConnected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (isConnected) {
+                statusElement.textContent = '🟢 Đã kết nối';
+                statusElement.className = 'status-online';
+            } else {
+                statusElement.textContent = '🔴 Mất kết nối';
+                statusElement.className = 'status-offline';
+            }
+        }
+
+        // Add item to real-time feed
+        function addFeedItem(message) {
+            const feedContent = document.getElementById('feedContent');
+            const feedItem = document.createElement('div');
+            feedItem.className = 'feed-item';
+            feedItem.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            feedContent.insertBefore(feedItem, feedContent.firstChild);
+            
+            // Keep only last 10 items
+            while (feedContent.children.length > 10) {
+                feedContent.removeChild(feedContent.lastChild);
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Image upload zone
+            const imageZone = document.getElementById('imageUploadZone');
+            const imageInput = document.getElementById('imageInput');
+            
+            imageZone.addEventListener('click', () => imageInput.click());
+            imageZone.addEventListener('dragover', handleDragOver);
+            imageZone.addEventListener('drop', (e) => handleDrop(e, 'image'));
+            imageInput.addEventListener('change', (e) => handleImageUpload(e.target.files[0]));
+            
+            // Video upload zone
+            const videoZone = document.getElementById('videoUploadZone');
+            const videoInput = document.getElementById('videoInput');
+            
+            videoZone.addEventListener('click', () => videoInput.click());
+            videoZone.addEventListener('dragover', handleDragOver);
+            videoZone.addEventListener('drop', (e) => handleDrop(e, 'video'));
+            videoInput.addEventListener('change', (e) => handleVideoUpload(e.target.files[0]));
+            
+            // Multiple files upload zone
+            const multipleZone = document.getElementById('multipleUploadZone');
+            const multipleInput = document.getElementById('multipleInput');
+            
+            multipleZone.addEventListener('click', () => multipleInput.click());
+            multipleZone.addEventListener('dragover', handleDragOver);
+            multipleZone.addEventListener('drop', (e) => handleDrop(e, 'multiple'));
+            multipleInput.addEventListener('change', (e) => handleMultipleUpload(e.target.files));
+            
+            // Post form
+            document.getElementById('postForm').addEventListener('submit', handlePostSubmit);
+        }
+
+        // Drag and drop handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDrop(e, type) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                if (type === 'image') {
+                    handleImageUpload(files[0]);
+                } else if (type === 'video') {
+                    handleVideoUpload(files[0]);
+                } else if (type === 'multiple') {
+                    handleMultipleUpload(files);
+                }
+            }
+        }
+
+        // Image upload handler
+        async function handleImageUpload(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showNotification('Vui lòng chọn file hình ảnh hợp lệ!', 'error');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                showNotification('File hình ảnh không được vượt quá 10MB!', 'error');
+                return;
+            }
+            
+            try {
+                showProgress();
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const response = await fetch('/api/media/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    showNotification('Upload hình ảnh thành công!', 'success');
+                    addPreview(result.data);
+                    uploadedFiles.push(result.data);
+                    refreshGallery();
+                } else {
+                    showNotification('Lỗi upload: ' + result.message, 'error');
+                }
+            } catch (error) {
+                hideProgress();
+                showNotification('Lỗi upload: ' + error.message, 'error');
+            }
+        }
+
+        // Video upload handler
+        async function handleVideoUpload(file) {
+            if (!file || !file.type.startsWith('video/')) {
+                showNotification('Vui lòng chọn file video hợp lệ!', 'error');
+                return;
+            }
+            
+            if (file.size > 100 * 1024 * 1024) {
+                showNotification('File video không được vượt quá 100MB!', 'error');
+                return;
+            }
+            
+            try {
+                showProgress();
+                const formData = new FormData();
+                formData.append('video', file);
+                
+                const response = await fetch('/api/media/upload-video', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    showNotification('Upload video thành công!', 'success');
+                    addPreview(result.data);
+                    uploadedFiles.push(result.data);
+                    refreshGallery();
+                } else {
+                    showNotification('Lỗi upload: ' + result.message, 'error');
+                }
+            } catch (error) {
+                hideProgress();
+                showNotification('Lỗi upload: ' + error.message, 'error');
+            }
+        }
+
+        // Multiple files upload handler
+        async function handleMultipleUpload(files) {
+            if (!files || files.length === 0) {
+                showNotification('Vui lòng chọn ít nhất 1 file!', 'error');
+                return;
+            }
+            
+            if (files.length > 10) {
+                showNotification('Chỉ được upload tối đa 10 files!', 'error');
+                return;
+            }
+            
+            try {
+                showProgress();
+                const formData = new FormData();
+                
+                for (let file of files) {
+                    if (!file.type.startsWith('image/')) {
+                        showNotification('Tất cả file phải là hình ảnh!', 'error');
+                        hideProgress();
+                        return;
+                    }
+                    formData.append('images', file);
+                }
+                
+                const response = await fetch('/api/media/upload-multiple', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                hideProgress();
+                
+                if (result.success) {
+                    showNotification(`Upload thành công ${result.data.length} files!`, 'success');
+                    result.data.forEach(fileData => {
+                        addPreview(fileData);
+                        uploadedFiles.push(fileData);
+                    });
+                    refreshGallery();
+                } else {
+                    showNotification('Lỗi upload: ' + result.message, 'error');
+                }
+            } catch (error) {
+                hideProgress();
+                showNotification('Lỗi upload: ' + error.message, 'error');
+            }
+        }
+
+        // Add preview
+        function addPreview(fileData) {
+            const container = document.getElementById('previewContainer');
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.dataset.mediaId = fileData.id;
+            
+            if (fileData.type === 'image') {
+                previewItem.innerHTML = `
+                    <img src="${fileData.url}" alt="${fileData.originalName}" class="preview-image">
+                    <button class="preview-remove" onclick="removePreview('${fileData.id}')">×</button>
+                `;
+            } else if (fileData.type === 'video') {
+                previewItem.innerHTML = `
+                    <video src="${fileData.url}" class="preview-video" controls></video>
+                    <button class="preview-remove" onclick="removePreview('${fileData.id}')">×</button>
+                `;
+            }
+            
+            container.appendChild(previewItem);
+        }
+
+        // Remove preview
+        function removePreview(mediaId) {
+            const previewItem = document.querySelector(`[data-media-id="${mediaId}"]`);
+            if (previewItem) {
+                previewItem.remove();
+            }
+            
+            uploadedFiles = uploadedFiles.filter(file => file.id !== mediaId);
+            selectedMediaIds.delete(mediaId);
+            updateSelectedMedia();
+        }
+
+        // Clear all previews
+        function clearPreviews() {
+            document.getElementById('previewContainer').innerHTML = '';
+            uploadedFiles = [];
+            selectedMediaIds.clear();
+            updateSelectedMedia();
+        }
+
+        // Load media gallery
+        async function loadMediaGallery() {
+            try {
+                const response = await fetch('/api/media?limit=50');
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderGallery(result.data.files);
+                }
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+            }
+        }
+
+        // Render gallery
+        function renderGallery(files) {
+            const galleryGrid = document.getElementById('galleryGrid');
+            galleryGrid.innerHTML = '';
+            
+            files.forEach(file => {
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                galleryItem.dataset.mediaId = file.id;
+                
+                const isSelected = selectedMediaIds.has(file.id);
+                if (isSelected) {
+                    galleryItem.style.backgroundColor = '#e8f0ff';
+                    galleryItem.style.border = '2px solid #667eea';
+                }
+                
+                if (file.type === 'image') {
+                    galleryItem.innerHTML = `
+                        <img src="${file.url}" alt="${file.originalName}" class="gallery-image">
+                        <div class="gallery-info">
+                            <div>${file.originalName}</div>
+                            <div>${formatFileSize(file.size)} • ${file.metadata.format}</div>
+                            <div>${new Date(file.uploadedAt).toLocaleDateString()}</div>
+                        </div>
+                        <div class="gallery-actions">
+                            <button class="btn btn-small" onclick="toggleMediaSelection('${file.id}')">
+                                ${isSelected ? '✓ Đã chọn' : '+ Chọn'}
+                            </button>
+                            <button class="btn btn-small btn-secondary" onclick="deleteMedia('${file.id}')">🗑️</button>
+                        </div>
+                    `;
+                } else if (file.type === 'video') {
+                    galleryItem.innerHTML = `
+                        <video src="${file.url}" class="gallery-video" controls></video>
+                        <div class="gallery-info">
+                            <div>${file.originalName}</div>
+                            <div>${formatFileSize(file.size)} • ${file.metadata.format}</div>
+                            <div>${new Date(file.uploadedAt).toLocaleDateString()}</div>
+                        </div>
+                        <div class="gallery-actions">
+                            <button class="btn btn-small" onclick="toggleMediaSelection('${file.id}')">
+                                ${isSelected ? '✓ Đã chọn' : '+ Chọn'}
+                            </button>
+                            <button class="btn btn-small btn-secondary" onclick="deleteMedia('${file.id}')">🗑️</button>
+                        </div>
+                    `;
+                }
+                
+                galleryGrid.appendChild(galleryItem);
+            });
+        }
+
+        // Toggle media selection
+        function toggleMediaSelection(mediaId) {
+            if (selectedMediaIds.has(mediaId)) {
+                selectedMediaIds.delete(mediaId);
+            } else {
+                selectedMediaIds.add(mediaId);
+            }
+            
+            updateSelectedMedia();
+            refreshGallery();
+        }
+
+        // Update selected media display
+        function updateSelectedMedia() {
+            const container = document.getElementById('selectedMediaContainer');
+            const list = document.getElementById('selectedMediaList');
+            
+            if (selectedMediaIds.size === 0) {
+                container.style.display = 'none';
+            } else {
+                container.style.display = 'block';
+                list.innerHTML = '';
+                
+                selectedMediaIds.forEach(mediaId => {
+                    const item = document.createElement('span');
+                    item.className = 'selected-item';
+                    item.innerHTML = `Media ${mediaId} <button onclick="toggleMediaSelection('${mediaId}')" style="background:none;border:none;color:white;margin-left:5px;">×</button>`;
+                    list.appendChild(item);
+                });
+            }
+        }
+
+        // Select all media
+        function selectAllMedia() {
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            galleryItems.forEach(item => {
+                selectedMediaIds.add(item.dataset.mediaId);
+            });
+            updateSelectedMedia();
+            refreshGallery();
+        }
+
+        // Clear selection
+        function clearSelection() {
+            selectedMediaIds.clear();
+            updateSelectedMedia();
+            refreshGallery();
+        }
+
+        // Filter media
+        function filterMedia() {
+            const filter = document.getElementById('mediaFilter').value;
+            loadMediaGallery().then(() => {
+                if (filter !== 'all') {
+                    // Implement filtering logic here
+                }
+            });
+        }
+
+        // Delete media
+        async function deleteMedia(mediaId) {
+            if (!confirm('Bạn có chắc muốn xóa file này?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/media/${mediaId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Xóa file thành công!', 'success');
+                    selectedMediaIds.delete(mediaId);
+                    updateSelectedMedia();
+                    refreshGallery();
+                } else {
+                    showNotification('Lỗi xóa file: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi xóa file: ' + error.message, 'error');
+            }
+        }
+
+        // Refresh gallery
+        function refreshGallery() {
+            loadMediaGallery();
+        }
+
+        // Handle post submission
+        async function handlePostSubmit(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.getElementById('postCategory').value;
+            const tags = document.getElementById('postTags').value.split(',').map(tag => tag.trim()).filter(tag => tag);
+            const privacy = document.getElementById('postPrivacy').value;
+            
+            if (!title || !content) {
+                showNotification('Vui lòng nhập tiêu đề và nội dung!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        content,
+                        category,
+                        tags,
+                        privacy,
+                        mediaIds: Array.from(selectedMediaIds)
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Đăng bài thành công!', 'success');
+                    
+                    // Reset form
+                    document.getElementById('postForm').reset();
+                    selectedMediaIds.clear();
+                    updateSelectedMedia();
+                    clearPreviews();
+                } else {
+                    showNotification('Lỗi đăng bài: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi đăng bài: ' + error.message, 'error');
+            }
+        }
+
+        // Save draft
+        function saveDraft() {
+            const draftData = {
+                title: document.getElementById('postTitle').value,
+                content: document.getElementById('postContent').value,
+                category: document.getElementById('postCategory').value,
+                tags: document.getElementById('postTags').value,
+                privacy: document.getElementById('postPrivacy').value,
+                mediaIds: Array.from(selectedMediaIds),
+                timestamp: new Date()
+            };
+            
+            localStorage.setItem('postDraft', JSON.stringify(draftData));
+            showNotification('Đã lưu nháp!', 'success');
+        }
+
+        // Show progress
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                }
+                
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressText').textContent = `Uploading... ${Math.round(progress)}%`;
+                
+                // Emit progress to other users
+                if (socket && currentUser) {
+                    socket.emit('upload_progress', {
+                        filename: 'file.ext',
+                        progress: Math.round(progress)
+                    });
+                }
+            }, 200);
+        }
+
+        // Hide progress
+        function hideProgress() {
+            setTimeout(() => {
+                document.getElementById('progressContainer').style.display = 'none';
+                document.getElementById('progressFill').style.width = '0%';
+            }, 500);
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Load draft on page load
+        window.addEventListener('load', () => {
+            const draft = localStorage.getItem('postDraft');
+            if (draft) {
+                const draftData = JSON.parse(draft);
+                if (confirm('Bạn có muốn khôi phục bản nháp đã lưu?')) {
+                    document.getElementById('postTitle').value = draftData.title || '';
+                    document.getElementById('postContent').value = draftData.content || '';
+                    document.getElementById('postCategory').value = draftData.category || 'general';
+                    document.getElementById('postTags').value = draftData.tags || '';
+                    document.getElementById('postPrivacy').value = draftData.privacy || 'public';
+                    
+                    if (draftData.mediaIds) {
+                        draftData.mediaIds.forEach(id => selectedMediaIds.add(id));
+                        updateSelectedMedia();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

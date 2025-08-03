@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tin nhắn - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7; /* Nền xám nhạt hơn */
+        }
+        
+        /* --- TÙY CHỈNH THANH CUỘN --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Lớp cho cuộc trò chuyện đang được chọn */
+        .conversation-item.active {
+            background-color: #f3f4f6;
+            transform: scale(1.02);
+        }
+
+        /* Hiệu ứng Glassmorphism cho sidebar */
+        .glassmorphism-sidebar {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(229, 231, 235, 0.8);
+        }
+
+        /* Animation cho tin nhắn mới */
+        @keyframes message-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .message-bubble {
+            animation: message-in 0.3s ease-out;
+        }
+        
+        /* Transition cho menu tùy chọn */
+        .options-menu, .attachment-menu {
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header chính -->
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="relative flex items-center justify-between h-16 px-4">
+            <!-- Cột Trái: Logo và Thanh tìm kiếm -->
+            <div class="flex items-center space-x-2">
+                <div class="flex-shrink-0">
+                    <a href="/" class="block" title="Về trang chủ">
+                        <svg class="w-10 h-10 text-black hover:text-gray-700 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-5H8v-2h8v2z"/><path d="M19.36 8.64C18.48 7.52 17.3 6.66 16 6.18V4.05c1.73.64 3.22 1.76 4.36 3.14l-1 1.45zM4.64 8.64l-1-1.45C4.78 5.81 6.27 4.69 8 4.05v2.13c-1.3.48-2.48 1.34-3.36 2.46z"/><path d="M12 18c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4z" opacity=".5"/></svg>
+                    </a>
+                </div>
+                <div class="relative hidden lg:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                    </span>
+                    <input 
+                        id="header-search" 
+                        type="search" 
+                        placeholder="Tìm kiếm bạn bè..." 
+                        class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border-transparent focus:bg-white focus:border-gray-300 focus:ring-black/50 transition"
+                        autocomplete="off"
+                    >
+                    <!-- Dropdown kết quả tìm kiếm -->
+                    <div id="search-dropdown" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50 hidden">
+                        <div id="search-results" class="p-2">
+                            <!-- Kết quả tìm kiếm sẽ được hiển thị ở đây -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Cột Giữa: Navigation Icons (định vị tuyệt đối) -->
+            <nav class="hidden md:flex items-center justify-center space-x-2 absolute left-1/2 -translate-x-1/2">
+                <a href="/" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang chủ"><i data-lucide="home" class="w-6 h-6"></i></a>
+                <a href="/messages" class="p-3 rounded-full bg-gray-200 transition" title="Tin nhắn"><i data-lucide="message-square" class="w-6 h-6"></i></a>
+                <a href="/notifications" class="p-3 rounded-full hover:bg-gray-100 transition relative" title="Thông báo">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </a>
+                <a href="/friends" class="p-3 rounded-full hover:bg-gray-100 transition" title="Bạn bè"><i data-lucide="users" class="w-6 h-6"></i></a>
+                <a href="/profile" class="p-3 rounded-full hover:bg-gray-100 transition" title="Profile"><i data-lucide="user" class="w-6 h-6"></i></a>
+            </nav>
+            <!-- Cột Phải: User Profile -->
+            <div class="flex items-center space-x-3">
+                <!-- User profile content sẽ được load từ JavaScript -->
+                <div id="user-profile-header" class="flex items-center space-x-3">
+                    <img id="header-user-avatar" src="https://placehold.co/40x40/000000/FFFFFF?text=U" alt="User Avatar" class="w-10 h-10 rounded-full border-2 border-gray-200">
+                    <div class="hidden sm:block">
+                        <div id="header-user-name" class="font-semibold text-sm">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Giao diện nhắn tin -->
+    <div class="container mx-auto h-[calc(100vh-64px)] p-4">
+        <div class="flex h-full rounded-3xl shadow-2xl overflow-hidden">
+            <!-- Cột danh sách cuộc trò chuyện -->
+            <aside id="conversation-list" class="w-full md:w-1/3 lg:w-1/4 glassmorphism-sidebar flex flex-col">
+                <div class="p-6 border-b border-white/20">
+                    <h2 class="text-3xl font-bold">Tin nhắn</h2>
+                </div>
+                <div class="p-4">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4">
+                            <i data-lucide="search" class="w-5 h-5 text-gray-500"></i>
+                        </span>
+                        <input type="search" placeholder="Tìm kiếm..." class="w-full pl-12 pr-4 py-3 rounded-full bg-gray-200/60 placeholder-gray-500 border-transparent focus:bg-white focus:border-gray-300 focus:ring-0 transition">
+                    </div>
+                </div>
+                <div class="flex-grow overflow-y-auto p-2">
+                    <div id="conversations-list">
+                        <div class="text-center text-gray-500 py-8">Đang tải cuộc trò chuyện...</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Cửa sổ chat chính -->
+            <main class="w-full md:w-2/3 lg:w-3/4 flex flex-col h-full bg-white">
+                <!-- Placeholder when no chat is selected -->
+                <div id="chat-placeholder" class="flex-grow flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <i data-lucide="message-square" class="w-20 h-20 mx-auto text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Chọn một cuộc trò chuyện</h3>
+                        <p>Chọn một cuộc trò chuyện từ danh sách bên trái để bắt đầu nhắn tin</p>
+                    </div>
+                </div>
+
+                <!-- Chat content (hidden by default) -->
+                <div id="chat-content" class="hidden flex-grow flex flex-col">
+                    <!-- Content will be dynamically loaded here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Global variables for chat elements
+        window.conversationList = null;
+        window.chatWindow = null;
+        window.chatContent = null;
+        window.chatPlaceholder = null;
+        window.backBtn = null;
+        window.currentChatUserId = null;
+
+        // API helper function
+        async function apiRequest(url, options = {}) {
+            const authToken = localStorage.getItem('accessToken');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            };
+            
+            const response = await fetch(url, { ...defaultOptions, ...options });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    localStorage.removeItem('userInfo');
+                    localStorage.removeItem('accessToken');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return response.json();
+        }
+
+        // Messages API
+        const messagesAPI = {
+            getConversations: () => apiRequest('/api/conversations'),
+            getMessages: (userId) => {
+                if (!userId || userId === 'undefined' || userId === 'conversations') {
+                    console.error('❌ Blocking invalid getMessages call with userId:', userId);
+                    return Promise.reject(new Error('Invalid userId for getMessages: ' + userId));
+                }
+                console.log('📨 Making API call to /api/messages/' + userId);
+                return apiRequest(`/api/messages/${userId}`);
+            },
+            sendMessage: (recipientId, content) => apiRequest('/api/messages', {
+                method: 'POST',
+                body: JSON.stringify({ recipientId, content })
+            }),
+            getFriends: () => apiRequest('/api/friends'),
+            deleteConversation: (userId) => apiRequest(`/api/messages/conversation/${userId}`, {
+                method: 'DELETE'
+            }),
+            updateActivity: () => apiRequest('/api/activity/ping', {
+                method: 'POST'
+            }),
+            getUserStatus: (userId) => apiRequest(`/api/user/status/${userId}`)
+        };
+
+        // Setup chat actions (view profile, delete conversation)
+        function setupChatActions(userId, userInfo) {
+            // View profile action
+            const viewProfileBtn = document.querySelector('.view-profile-btn');
+            if (viewProfileBtn) {
+                viewProfileBtn.onclick = () => {
+                    window.open(`/profile.html?user=${userId}`, '_blank');
+                };
+            }
+
+            // Delete conversation action
+            const deleteConvBtn = document.querySelector('.delete-conversation-btn');
+            if (deleteConvBtn) {
+                deleteConvBtn.onclick = async () => {
+                    if (confirm(`Bạn có chắc muốn xóa cuộc trò chuyện với ${userInfo.firstName} ${userInfo.lastName}?`)) {
+                        try {
+                            await messagesAPI.deleteConversation(userId);
+                            alert('Đã xóa cuộc trò chuyện');
+                            closeChat();
+                            loadConversations();
+                        } catch (error) {
+                            console.error('Error deleting conversation:', error);
+                            alert('Có lỗi xảy ra khi xóa cuộc trò chuyện');
+                        }
+                    }
+                };
+            }
+        }
+
+        // Open chat with user
+        async function openChatWithUser(userId) {
+            try {
+                console.log('🔍 Opening chat with user:', userId);
+                
+                // More flexible userId validation (MongoDB ObjectIds are typically 24 chars, but let's be more flexible)
+                if (!userId || userId === 'undefined' || userId === 'conversations' || userId.length < 12) {
+                    console.error('❌ Invalid userId for openChatWithUser:', userId);
+                    return;
+                }
+
+                window.currentChatUserId = userId;
+                
+                // Get user profile
+                const profileResponse = await apiRequest(`/api/profile/${userId}`);
+                const userInfo = profileResponse.user;
+                
+                // Update chat header
+                document.getElementById('chat-content').innerHTML = `
+                    <div class="flex items-center justify-between p-4 bg-white border-b border-gray-100">
+                        <div class="flex items-center space-x-4">
+                            <button id="back-to-list-btn" class="p-2 rounded-full hover:bg-gray-100 md:hidden">
+                                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                            </button>
+                            <img src="${userInfo.avatar || `https://placehold.co/40x40/6B7280/FFFFFF?text=${userInfo.firstName.charAt(0)}`}" 
+                                 alt="${userInfo.firstName} ${userInfo.lastName}" 
+                                 class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <h3 class="font-semibold">${userInfo.firstName} ${userInfo.lastName}</h3>
+                                <p id="status-text" class="text-sm text-gray-500">Đang hoạt động</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="voice-call-btn" class="p-3 rounded-full hover:bg-gray-100 transition" title="Gọi thoại">
+                                <i data-lucide="phone" class="w-5 h-5"></i>
+                            </button>
+                            <button id="video-call-btn" class="p-3 rounded-full hover:bg-gray-100 transition" title="Gọi video">
+                                <i data-lucide="video" class="w-5 h-5"></i>
+                            </button>
+                            <div class="relative">
+                                <button class="options-btn p-3 rounded-full hover:bg-gray-100 transition">
+                                    <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                                </button>
+                                <div class="options-menu hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg z-10">
+                                    <button class="view-profile-btn flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                                        <i data-lucide="user" class="w-5 h-5 mr-3"></i>Xem hồ sơ
+                                    </button>
+                                    <button class="delete-conversation-btn flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left">
+                                        <i data-lucide="trash-2" class="w-5 h-5 mr-3"></i>Xóa đoạn chat
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="messages-container" class="flex-grow overflow-y-auto p-4 space-y-4">
+                        <div class="text-center text-gray-500 py-8">Đang tải tin nhắn...</div>
+                    </div>
+                    <div class="p-4 bg-white border-t border-gray-100">
+                        <div id="message-input-container" class="flex items-center space-x-3 bg-gray-100 rounded-full p-2">
+                            <button class="attachment-btn p-2 rounded-full hover:bg-gray-200 transition">
+                                <i data-lucide="paperclip" class="w-6 h-6 text-gray-500"></i>
+                            </button>
+                            <input id="message-input" type="text" placeholder="Nhập tin nhắn..." 
+                                   class="flex-grow bg-transparent focus:ring-0 border-0 p-0">
+                            <button class="p-2 rounded-full hover:bg-gray-200 transition">
+                                <i data-lucide="smile" class="w-6 h-6 text-gray-500"></i>
+                            </button>
+                            <button id="send-btn" class="p-3 rounded-full bg-black text-white hover:bg-gray-800 transition shadow-lg">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <!-- Attachment menu -->
+                        <div class="attachment-menu hidden absolute bottom-full left-0 mb-2 w-64 bg-white rounded-lg shadow-lg z-10 p-2 opacity-0 scale-95 transform transition duration-200">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 text-center">
+                                    <i data-lucide="image" class="w-6 h-6 text-blue-500 mb-1"></i>
+                                    <span class="text-xs text-gray-600">Hình ảnh</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 text-center">
+                                    <i data-lucide="file" class="w-6 h-6 text-gray-500 mb-1"></i>
+                                    <span class="text-xs text-gray-600">File</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 text-center">
+                                    <i data-lucide="mic" class="w-6 h-6 text-green-500 mb-1"></i>
+                                    <span class="text-xs text-gray-600">Ghi âm</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 text-center">
+                                    <i data-lucide="camera" class="w-6 h-6 text-red-500 mb-1"></i>
+                                    <span class="text-xs text-gray-600">Camera</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 text-center">
+                                    <i data-lucide="map-pin" class="w-6 h-6 text-orange-500 mb-1"></i>
+                                    <span class="text-xs text-gray-600">Vị trí</span>
+                                </button>
+                                <button class="flex flex-col items-center p-3 rounded-lg hover:bg-gray-100 text-center">
+                                    <i data-lucide="user" class="w-6 h-6 text-purple-500 mb-1"></i>
+                                    <span class="text-xs text-gray-600">Liên hệ</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Show chat view
+                document.getElementById('conversation-list').classList.add('hidden', 'md:block');
+                document.getElementById('chat-content').classList.remove('hidden');
+                document.getElementById('chat-placeholder').classList.add('hidden');
+                
+                // Setup event listeners
+                setupChatActions(userId, userInfo);
+                setupMessageInput();
+                
+                // Load messages
+                const messagesContainer = document.getElementById('messages-container');
+                await loadMessagesForUser(userId, messagesContainer);
+                
+                // Update user status
+                updateUserStatus(userId, document.getElementById('status-text'));
+                
+                // Re-initialize icons
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('❌ Error opening chat:', error);
+                alert('Có lỗi xảy ra khi mở cuộc trò chuyện: ' + error.message);
+            }
+        }
+
+        // Load messages for specific user
+        async function loadMessagesForUser(userId, container) {
+            try {
+                if (!userId || userId === 'undefined' || userId === 'conversations' || userId.length < 12) {
+                    console.error('Invalid userId in loadMessagesForUser:', userId);
+                    throw new Error('Invalid user ID');
+                }
+                
+                console.log('📨 Loading messages for user:', userId);
+                console.log('📨 UserId length:', userId.length);
+                console.log('📨 UserId type:', typeof userId);
+                
+                const response = await messagesAPI.getMessages(userId);
+                console.log('📨 Messages API response:', response);
+                
+                const messages = response.messages || [];
+                const currentUserInfo = JSON.parse(localStorage.getItem('userInfo'));
+                const currentUserId = currentUserInfo.id;
+                
+                console.log('📨 Current user ID:', currentUserId);
+                console.log('📨 Messages count:', messages.length);
+                
+                if (messages.length > 0) {
+                    container.innerHTML = messages.map(message => {
+                        const isOwnMessage = message.senderId === currentUserId || message.sender._id === currentUserId || message.sender.id === currentUserId;
+                        const messageTime = formatMessageTime(message.createdAt || message.timestamp);
+                        
+                        if (isOwnMessage) {
+                            return `
+                                <div class="flex justify-end">
+                                    <div class="max-w-xs lg:max-w-md px-4 py-2 bg-black text-white rounded-lg">
+                                        <p>${message.content}</p>
+                                        <div class="text-xs text-gray-300 mt-1">${messageTime}</div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            return `
+                                <div class="flex">
+                                    <div class="max-w-xs lg:max-w-md px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">
+                                        <p>${message.content}</p>
+                                        <div class="text-xs text-gray-500 mt-1">${messageTime}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }).join('');
+                    
+                    // Scroll to bottom
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8">Chưa có tin nhắn nào</div>';
+                }
+            } catch (error) {
+                console.error('❌ Error loading messages:', error);
+                console.error('❌ Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    userId: userId
+                });
+                container.innerHTML = '<div class="text-center text-red-500 py-8">Lỗi tải tin nhắn: ' + error.message + '</div>';
+            }
+        }
+
+        // Setup message input
+        function setupMessageInput() {
+            const messageInput = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-btn');
+            const backBtn = document.getElementById('back-to-list-btn');
+            
+            if (messageInput && sendBtn) {
+                const sendMessage = async () => {
+                    const content = messageInput.value.trim();
+                    if (!content || !window.currentChatUserId) return;
+                    
+                    try {
+                        if (!window.currentChatUserId || window.currentChatUserId === 'undefined' || window.currentChatUserId === 'conversations' || window.currentChatUserId.length < 12) {
+                            console.error('Invalid currentChatUserId for sending message:', window.currentChatUserId);
+                            return;
+                        }
+                        
+                        await messagesAPI.sendMessage(window.currentChatUserId, content);
+                        messageInput.value = '';
+                        
+                        // Reload messages
+                        const messagesContainer = document.getElementById('messages-container');
+                        await loadMessagesForUser(window.currentChatUserId, messagesContainer);
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        alert('Có lỗi xảy ra khi gửi tin nhắn');
+                    }
+                };
+                
+                sendBtn.addEventListener('click', sendMessage);
+                messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+            
+            if (backBtn) {
+                backBtn.addEventListener('click', closeChat);
+            }
+        }
+
+        // Close chat
+        function closeChat() {
+            document.getElementById('conversation-list').classList.remove('hidden');
+            document.getElementById('chat-content').classList.add('hidden');
+            document.getElementById('chat-placeholder').classList.remove('hidden');
+            window.currentChatUserId = null;
+        }
+
+        // Load conversations
+        async function loadConversations() {
+            try {
+                const conversationsContainer = document.getElementById('conversations-list');
+                
+                try {
+                    const conversationsResponse = await messagesAPI.getConversations();
+                    console.log('🔍 Conversations response:', conversationsResponse); // Debug log
+                    
+                    if (conversationsResponse.conversations && conversationsResponse.conversations.length > 0) {
+                        conversationsContainer.innerHTML = conversationsResponse.conversations.map(conv => {
+                            // More robust userId extraction
+                            const userId = conv.user._id || conv.user.id;
+                            console.log('🔍 Conversation userId:', userId, 'Conv data:', conv); // Debug log
+                            
+                            return `
+                                <div class="conversation-item p-3 rounded-xl hover:bg-gray-100 cursor-pointer transition" 
+                                     data-user-id="${userId}">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${conv.user.profile?.avatar || conv.user.avatar || `https://placehold.co/48x48/6B7280/FFFFFF?text=${(conv.user.firstName || conv.user.name || 'U').charAt(0)}`}" 
+                                             alt="${conv.user.firstName} ${conv.user.lastName}" 
+                                             class="w-12 h-12 rounded-full object-cover">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <h3 class="font-semibold text-gray-900 truncate">${conv.user.firstName || conv.user.name || 'Unknown'} ${conv.user.lastName || ''}</h3>
+                                                <p class="text-xs text-gray-400">${formatMessageTime(conv.lastMessage?.createdAt || conv.lastMessage?.timestamp)}</p>
+                                            </div>
+                                            <p class="text-sm text-gray-500 truncate">${conv.lastMessage?.content || 'Chưa có tin nhắn'}</p>
+                                            ${conv.unreadCount > 0 ? `<div class="w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center mt-1">${conv.unreadCount}</div>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        // Add event listeners for conversation items
+                        conversationsContainer.querySelectorAll('.conversation-item').forEach(item => {
+                            item.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                const userId = item.getAttribute('data-user-id');
+                                console.log('🔍 Clicked conversation userId:', userId);
+                                
+                                if (userId && userId !== 'undefined' && userId !== 'null' && userId !== 'conversations' && userId.length >= 20) {
+                                    openChatWithUser(userId);
+                                } else {
+                                    console.error('Invalid userId from data-user-id attribute:', userId);
+                                }
+                            });
+                        });
+                    } else {
+                        console.log('📋 No conversations found, loading friends list...');
+                        loadFriendsList(conversationsContainer);
+                    }
+                } catch (conversationError) {
+                    console.log('No existing conversations, loading friends list...', conversationError);
+                    loadFriendsList(conversationsContainer);
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                document.getElementById('conversations-list').innerHTML = 
+                    '<div class="text-center text-red-500 py-8">Lỗi tải danh sách cuộc trò chuyện</div>';
+            }
+        }
+
+        // Load friends list
+        async function loadFriendsList(container) {
+            try {
+                console.log('📋 Loading friends list...');
+                const friendsResponse = await messagesAPI.getFriends();
+                const friends = friendsResponse.friends || [];
+                
+                console.log('🔍 Friends data:', friends); // Debug log
+                
+                if (friends.length > 0) {
+                    container.innerHTML = friends.map(friend => {
+                        // Handle both id and _id from server response
+                        const userId = friend.id || friend._id;
+                        console.log('🔍 Friend userId:', userId, 'Friend data:', friend); // Debug log
+                        
+                        return `
+                            <div class="conversation-item p-3 rounded-xl hover:bg-gray-100 cursor-pointer transition" 
+                                 data-user-id="${userId}">
+                                <div class="flex items-center space-x-3">
+                                    <img src="${friend.avatar || friend.profile?.avatar || `https://placehold.co/48x48/6B7280/FFFFFF?text=${(friend.firstName || friend.name || 'U').charAt(0)}`}" 
+                                         alt="${friend.firstName} ${friend.lastName}" 
+                                         class="w-12 h-12 rounded-full object-cover">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-semibold text-gray-900 truncate">${friend.firstName || friend.name || 'Unknown'} ${friend.lastName || ''}</h3>
+                                        <p class="text-sm text-gray-500">Nhấn để bắt đầu trò chuyện</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Add event listeners for conversation items
+                    container.querySelectorAll('.conversation-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            console.log('🔍 Conversation item clicked!');
+                            const userId = item.getAttribute('data-user-id');
+                            console.log('🔍 Retrieved userId from data-user-id:', userId);
+                            console.log('🔍 Item element:', item);
+                            
+                            // More flexible userId validation
+                            if (userId && userId !== 'undefined' && userId !== 'null' && userId !== 'conversations' && userId.length >= 20) {
+                                console.log('✅ Valid userId, calling openChatWithUser...');
+                                openChatWithUser(userId);
+                            } else {
+                                console.error('❌ Invalid userId from conversation data-user-id:', userId);
+                                console.error('❌ UserId length:', userId ? userId.length : 'no length');
+                                console.error('❌ UserId type:', typeof userId);
+                            }
+                        });
+                    });
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-500 py-8">
+                            <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300"></i>
+                            <p class="mt-4">Chưa có bạn bè nào</p>
+                            <p class="mt-2 text-sm">Hãy kết bạn để bắt đầu trò chuyện!</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+                container.innerHTML = '<div class="text-center text-red-500 py-8">Lỗi tải danh sách bạn bè</div>';
+            }
+        }
+
+        // Format message time
+        function formatMessageTime(timestamp) {
+            if (!timestamp) return 'Vừa xong';
+            
+            const messageDate = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now.getTime() - messageDate.getTime();
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffMins < 1) return 'Vừa xong';
+            if (diffMins < 60) return `${diffMins} phút trước`;
+            if (diffHours < 24) return `${diffHours} giờ trước`;
+            if (diffDays < 7) return `${diffDays} ngày trước`;
+            
+            return messageDate.toLocaleDateString('vi-VN');
+        }
+
+        // Update user status
+        async function updateUserStatus(userId, statusElement) {
+            try {
+                const statusResponse = await messagesAPI.getUserStatus(userId);
+                if (statusResponse.status) {
+                    statusElement.textContent = statusResponse.status === 'online' ? 'Đang hoạt động' : 'Không hoạt động';
+                }
+            } catch (error) {
+                console.log('Could not fetch user status:', error);
+            }
+        }
+
+        // Activity tracking
+        function startActivityTracking() {
+            // Update user activity every 30 seconds
+            setInterval(async () => {
+                try {
+                    await messagesAPI.updateActivity();
+                } catch (error) {
+                    console.log('Activity update failed:', error);
+                }
+            }, 30000);
+        }
+
+        // Status updates
+        function startStatusUpdates() {
+            // Update status every 10 seconds
+            setInterval(() => {
+                if (window.currentChatUserId) {
+                    const statusElement = document.getElementById('status-text');
+                    if (statusElement) {
+                        updateUserStatus(window.currentChatUserId, statusElement);
+                    }
+                }
+            }, 10000);
+        }
+
+        // Authentication initialization
+        function initializeAuth() {
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            if (!token) {
+                window.location.replace('/login.html');
+                return;
+            }
+
+            // Update user info in header
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            if (userInfo.firstName) {
+                // Update header avatar
+                const headerAvatar = document.getElementById('header-user-avatar');
+                if (headerAvatar) {
+                    headerAvatar.src = userInfo.avatar || `https://placehold.co/40x40/000000/FFFFFF?text=${userInfo.firstName.charAt(0)}`;
+                    headerAvatar.alt = `${userInfo.firstName} ${userInfo.lastName}`;
+                }
+                
+                // Update header user name
+                const headerUserName = document.getElementById('header-user-name');
+                if (headerUserName) {
+                    headerUserName.textContent = `${userInfo.firstName} ${userInfo.lastName}`;
+                }
+            }
+        }
+
+        // Initialize messages functionality
+        async function initializeMessages() {
+            try {
+                console.log('🚀 Initializing messages...');
+                
+                // Check if user is logged in
+                const token = localStorage.getItem('accessToken');
+                const userInfo = localStorage.getItem('userInfo');
+                
+                console.log('🔍 Token available:', !!token);
+                console.log('🔍 User info available:', !!userInfo);
+                
+                if (!token) {
+                    console.error('❌ No access token found, redirecting to login...');
+                    window.location.replace('/login.html');
+                    return;
+                }
+                
+                if (userInfo) {
+                    const user = JSON.parse(userInfo);
+                    console.log('🔍 Current user:', user);
+                }
+                
+                await loadConversations();
+                
+                // Check if there's a user ID in URL params
+                const urlParams = new URLSearchParams(window.location.search);
+                const userId = urlParams.get('user');
+                if (userId && userId !== 'undefined' && userId !== 'conversations' && userId.length >= 12) {
+                    await openChatWithUser(userId);
+                } else if (userId) {
+                    console.warn('Invalid userId in URL params:', userId);
+                }
+            } catch (error) {
+                console.error('Error initializing messages:', error);
+            }
+        }
+
+        // Initialize the messages app when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM Content Loaded - Starting combined initialization');
+            
+            // Initialize authentication and user info first
+            initializeAuth();
+            
+            // Wait a bit for auth to complete, then initialize messages
+            setTimeout(() => {
+                initializeMessages();
+                startActivityTracking(); 
+                startStatusUpdates();
+            }, 200);
+        });
+
+        // Logic mở/đóng menu
+        document.body.addEventListener('click', function(e) {
+            const isOptionsBtn = e.target.closest('.options-btn');
+            const isAttachmentBtn = e.target.closest('.attachment-btn');
+            
+            // Đóng tất cả các menu khác
+            document.querySelectorAll('.options-menu, .attachment-menu').forEach(menu => {
+                let shouldClose = true;
+                if (isOptionsBtn && menu.classList.contains('options-menu') && menu.previousElementSibling.isEqualNode(isOptionsBtn)) {
+                    shouldClose = false;
+                }
+                if (isAttachmentBtn && menu.classList.contains('attachment-menu')) {
+                     shouldClose = false;
+                }
+                if (shouldClose) {
+                    menu.classList.add('hidden');
+                    menu.classList.remove('opacity-100', 'scale-100');
+                    menu.classList.add('opacity-0', 'scale-95');
+                }
+            });
+
+            // Xử lý menu options
+            if (isOptionsBtn) {
+                const menu = isOptionsBtn.nextElementSibling;
+                if (menu && menu.classList.contains('options-menu')) {
+                    menu.classList.toggle('hidden');
+                    if (!menu.classList.contains('hidden')) {
+                        menu.classList.remove('opacity-0', 'scale-95');
+                        menu.classList.add('opacity-100', 'scale-100');
+                    }
+                }
+            }
+
+            // Xử lý menu attachment
+            if (isAttachmentBtn) {
+                const menu = e.target.closest('.p-4').querySelector('.attachment-menu');
+                if (menu) {
+                    menu.classList.toggle('hidden');
+                    if (!menu.classList.contains('hidden')) {
+                        menu.classList.remove('opacity-0', 'scale-95');
+                        menu.classList.add('opacity-100', 'scale-100');
+                    }
+                }
+            }
+
+            // Handle call buttons
+            const voiceCallBtn = e.target.closest('#voice-call-btn');
+            const videoCallBtn = e.target.closest('#video-call-btn');
+            
+            if (voiceCallBtn && window.currentChatUserId) {
+                initiateCall('voice');
+            }
+            
+            if (videoCallBtn && window.currentChatUserId) {
+                initiateCall('video');
+            }
+        });
+
+        // Call functionality
+        function initiateCall(callType) {
+            if (!window.currentChatUserId) {
+                console.error('No active conversation for call');
+                return;
+            }
+
+            try {
+                // Get current user info
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                const currentChatHeader = document.querySelector('#chat-content .flex.items-center.justify-between');
+                const contactName = currentChatHeader?.querySelector('h3')?.textContent || 'Người dùng';
+                const contactAvatar = currentChatHeader?.querySelector('img')?.src || '';
+
+                // Create call data to pass to new window
+                const callData = {
+                    callType: callType, // 'voice' or 'video'
+                    contactId: window.currentChatUserId,
+                    contactName: contactName,
+                    contactAvatar: contactAvatar,
+                    callerName: `${userInfo.firstName} ${userInfo.lastName}`,
+                    callerAvatar: userInfo.avatar || `https://placehold.co/40x40/000000/FFFFFF?text=${userInfo.firstName?.charAt(0) || 'U'}`
+                };
+
+                // Store call data in sessionStorage for new window to access
+                sessionStorage.setItem('currentCallData', JSON.stringify(callData));
+
+                // Open outgoing call in new tab
+                const callWindow = window.open(
+                    '/outgoing-call.html',
+                    `call_${Date.now()}`,
+                    'width=800,height=600,scrollbars=no,resizable=yes,status=no,location=no,toolbar=no,menubar=no'
+                );
+
+                // Focus the new window
+                if (callWindow) {
+                    callWindow.focus();
+                    console.log(`${callType} call initiated with ${contactName}`);
+                } else {
+                    console.error('Could not open call window - popup blocked?');
+                    alert('Không thể mở cửa sổ cuộc gọi. Vui lòng cho phép popup.');
+                }
+
+            } catch (error) {
+                console.error('Error initiating call:', error);
+                alert('Có lỗi xảy ra khi thực hiện cuộc gọi.');
+            }
+        }
+
+        // Handle incoming calls (this would typically come from WebSocket/server)
+        function handleIncomingCall(callData) {
+            // Store incoming call data
+            sessionStorage.setItem('incomingCallData', JSON.stringify(callData));
+            
+            // Open incoming call window
+            const callWindow = window.open(
+                '/incoming-call.html',
+                `incoming_call_${Date.now()}`,
+                'width=800,height=600,scrollbars=no,resizable=yes,status=no,location=no,toolbar=no,menubar=no'
+            );
+            
+            if (callWindow) {
+                callWindow.focus();
+            }
+        }
+
+        // Listen for call status updates from call windows
+        window.addEventListener('message', function(event) {
+            if (event.origin !== window.location.origin) return;
+            
+            const { type, data } = event.data;
+            
+            switch (type) {
+                case 'call-accepted':
+                    console.log('Call accepted:', data);
+                    // Handle call accepted logic
+                    break;
+                case 'call-rejected':
+                    console.log('Call rejected:', data);
+                    // Handle call rejected logic  
+                    break;
+                case 'call-ended':
+                    console.log('Call ended:', data);
+                    // Handle call ended logic
+                    break;
+                default:
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

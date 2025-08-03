@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài đặt - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            overflow-x: hidden;
+            visibility: hidden; /* Ẩn body cho đến khi kiểm tra xong */
+        }
+        
+        /* Chỉ hiển thị khi đã đăng nhập */
+        body.authenticated {
+            visibility: visible;
+        }
+        
+        /* --- TÙY CHỈNH THANH CUỘN --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Hiệu ứng Glassmorphism cho sidebar */
+        .glassmorphism-sidebar {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        
+        /* Style cho mục đang được chọn ở sidebar */
+        .sidebar-link.active {
+            background-color: #f3f4f6;
+            color: #111827;
+            font-weight: 600;
+        }
+        .sidebar-link.active i {
+            color: #111827;
+        }
+
+        /* Transition cho modal */
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal > div {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header chính -->
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="relative flex items-center justify-between h-16 px-4">
+            <!-- Cột Trái: Logo -->
+            <div class="flex items-center space-x-2">
+                <div class="flex-shrink-0">
+                    <a href="/" class="block" title="Về trang chủ">
+                        <svg class="w-10 h-10 text-black hover:text-gray-700 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-5H8v-2h8v2z"/><path d="M19.36 8.64C18.48 7.52 17.3 6.66 16 6.18V4.05c1.73.64 3.22 1.76 4.36 3.14l-1 1.45zM4.64 8.64l-1-1.45C4.78 5.81 6.27 4.69 8 4.05v2.13c-1.3.48-2.48 1.34-3.36 2.46z"/><path d="M12 18c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4z" opacity=".5"/></svg>
+                    </a>
+                </div>
+            </div>
+            <!-- Cột Giữa: Navigation Icons -->
+            <nav class="hidden md:flex items-center justify-center space-x-2 absolute left-1/2 -translate-x-1/2">
+                <a href="/" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang chủ"><i data-lucide="home" class="w-6 h-6"></i></a>
+                <a href="/messages" class="p-3 rounded-full hover:bg-gray-100 transition" title="Tin nhắn"><i data-lucide="message-square" class="w-6 h-6"></i></a>
+                <a href="/notifications" class="p-3 rounded-full hover:bg-gray-100 transition" title="Thông báo"><i data-lucide="bell" class="w-6 h-6"></i></a>
+                <a href="/friends" class="p-3 rounded-full hover:bg-gray-100 transition" title="Bạn bè"><i data-lucide="users" class="w-6 h-6"></i></a>
+                <a href="/profile" class="p-3 rounded-full hover:bg-gray-100 transition" title="Profile"><i data-lucide="user" class="w-6 h-6"></i></a>
+                <a href="/settings" class="p-3 rounded-full bg-gray-200 transition" title="Cài đặt"><i data-lucide="settings" class="w-6 h-6"></i></a>
+            </nav>
+            <!-- Cột Phải: User Profile -->
+            <div class="flex items-center space-x-3">
+                <!-- Nội dung đã được xóa -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto h-[calc(100vh-64px)] p-4">
+        <div class="flex h-full rounded-3xl shadow-2xl overflow-hidden">
+            <!-- Left Sidebar -->
+            <aside class="hidden md:block w-1/3 lg:w-1/4 glassmorphism-sidebar flex-col">
+                <div class="p-6 h-full overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">Cài đặt</h2>
+                    </div>
+                    <nav id="settings-nav" class="space-y-2">
+                        <a href="#" data-view="account" class="sidebar-link active flex items-center p-3 rounded-xl">
+                            <i data-lucide="user" class="w-5 h-5 mr-3"></i>
+                            <span class="font-semibold">Tài khoản</span>
+                        </a>
+                        <a href="#" data-view="security" class="sidebar-link flex items-center text-gray-600 hover:bg-gray-200/50 p-3 rounded-xl transition">
+                            <i data-lucide="shield" class="w-5 h-5 mr-3"></i>
+                            <span class="font-semibold">Bảo mật và đăng nhập</span>
+                        </a>
+                        <a href="#" data-view="privacy" class="sidebar-link flex items-center text-gray-600 hover:bg-gray-200/50 p-3 rounded-xl transition">
+                            <i data-lucide="lock" class="w-5 h-5 mr-3"></i>
+                            <span class="font-semibold">Quyền riêng tư</span>
+                        </a>
+                         <a href="#" data-view="notifications" class="sidebar-link flex items-center text-gray-600 hover:bg-gray-200/50 p-3 rounded-xl transition">
+                            <i data-lucide="bell" class="w-5 h-5 mr-3"></i>
+                            <span class="font-semibold">Thông báo</span>
+                        </a>
+                         <a href="#" data-view="language" class="sidebar-link flex items-center text-gray-600 hover:bg-gray-200/50 p-3 rounded-xl transition">
+                            <i data-lucide="globe-2" class="w-5 h-5 mr-3"></i>
+                            <span class="font-semibold">Ngôn ngữ và khu vực</span>
+                        </a>
+                         <a href="#" data-view="media" class="sidebar-link flex items-center text-gray-600 hover:bg-gray-200/50 p-3 rounded-xl transition">
+                            <i data-lucide="image" class="w-5 h-5 mr-3"></i>
+                            <span class="font-semibold">File phương tiện</span>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Settings Content -->
+            <div class="w-full md:w-2/3 lg:w-3/4 overflow-y-auto p-8 bg-white">
+                <!-- View: Cài đặt tài khoản -->
+                <div id="view-account">
+                    <h3 class="font-bold text-2xl mb-6">Cài đặt tài khoản chung</h3>
+                    <div class="space-y-4 divide-y divide-gray-200">
+                        <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Tên</h4>
+                                <p id="user-display-name" class="text-sm text-gray-500"></p>
+                            </div>
+                            <button id="edit-name-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                        </div>
+                         <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Thông tin liên hệ</h4>
+                                <p id="user-email" class="text-sm text-gray-500">bosua@cow.com</p>
+                            </div>
+                            <button id="edit-email-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                        </div>
+                         <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Vô hiệu hóa và xóa tài khoản</h4>
+                                <p class="text-sm text-gray-500">Tạm thời vô hiệu hóa hoặc xóa vĩnh viễn tài khoản của bạn.</p>
+                            </div>
+                            <button id="delete-account-btn" class="text-sm font-semibold text-red-600 hover:underline">Xem</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View: Bảo mật và đăng nhập -->
+                <div id="view-security" class="hidden">
+                     <h3 class="font-bold text-2xl mb-2">Bảo mật và đăng nhập</h3>
+                     <p class="text-gray-500 mb-6">Kiểm tra và cập nhật các cài đặt để giữ an toàn cho tài khoản của bạn.</p>
+                    <div class="space-y-8">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Đăng nhập</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg space-y-4 divide-y divide-gray-200">
+                                <div class="flex items-center justify-between pt-4 first:pt-0">
+                                    <div>
+                                        <h5 class="font-semibold">Đổi mật khẩu</h5>
+                                        <p class="text-sm text-gray-500">Bạn nên sử dụng mật khẩu mạnh mà mình chưa dùng ở đâu khác.</p>
+                                    </div>
+                                    <button id="change-password-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                                </div>
+                                <div class="flex items-center justify-between pt-4">
+                                    <div>
+                                        <h5 class="font-semibold">Lưu thông tin đăng nhập của bạn</h5>
+                                        <p class="text-sm text-gray-500">Lưu thông tin để không cần nhập lại vào lần sau.</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                      <input type="checkbox" id="remember-login" class="sr-only peer" checked>
+                                      <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div>
+                            <h4 class="font-bold text-lg mb-2">Xác thực 2 yếu tố</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg space-y-4 divide-y divide-gray-200">
+                                <div class="flex items-center justify-between pt-4 first:pt-0">
+                                    <div>
+                                        <h5 class="font-semibold">Sử dụng xác thực 2 yếu tố</h5>
+                                        <p class="text-sm text-gray-500">Tăng cường bảo mật cho tài khoản của bạn.</p>
+                                    </div>
+                                    <button id="setup-2fa-btn" class="text-sm font-semibold text-blue-600 hover:underline">Thiết lập</button>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div>
+                            <h4 class="font-bold text-lg mb-2">Bảo mật nâng cao</h4>
+                             <div class="bg-gray-50 p-4 rounded-lg space-y-4 divide-y divide-gray-200">
+                                <div class="flex items-center justify-between pt-4 first:pt-0">
+                                    <div>
+                                        <h5 class="font-semibold">Cảnh báo về những lần đăng nhập lạ</h5>
+                                        <p class="text-sm text-gray-500">Nhận thông báo nếu có người đăng nhập từ thiết bị hoặc trình duyệt lạ.</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                      <input type="checkbox" id="login-alerts" class="sr-only peer" checked>
+                                      <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                    </label>
+                                </div>
+                                 <div class="flex items-center justify-between pt-4">
+                                    <div>
+                                        <h5 class="font-semibold">Kiểm tra email gần đây</h5>
+                                        <p class="text-sm text-gray-500">Xem lại các email bảo mật được gửi gần đây từ Cow.</p>
+                                    </div>
+                                    <button id="view-emails-btn" class="text-sm font-semibold text-blue-600 hover:underline">Xem</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View: Quyền riêng tư -->
+                <div id="view-privacy" class="hidden">
+                    <h3 class="font-bold text-2xl mb-6">Cài đặt quyền riêng tư</h3>
+                     <div class="space-y-4 divide-y divide-gray-200">
+                        <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Ai có thể xem bài viết của bạn trong tương lai?</h4>
+                                <p id="post-privacy" class="text-sm text-gray-500">Công khai</p>
+                            </div>
+                            <button id="edit-post-privacy-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                        </div>
+                         <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Ai có thể gửi cho bạn lời mời kết bạn?</h4>
+                                <p id="friend-request-privacy" class="text-sm text-gray-500">Mọi người</p>
+                            </div>
+                            <button id="edit-friend-privacy-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                        </div>
+                         <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Ai có thể xem danh sách bạn bè của bạn?</h4>
+                                <p id="friend-list-privacy" class="text-sm text-gray-500">Bạn bè</p>
+                            </div>
+                            <button id="edit-friend-list-privacy-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Thông báo -->
+                 <div id="view-notifications" class="hidden">
+                    <h3 class="font-bold text-2xl mb-6">Cài đặt thông báo</h3>
+                    <div class="space-y-4 divide-y divide-gray-200">
+                        <div class="py-4">
+                            <h4 class="font-semibold mb-2">Bình luận</h4>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-gray-500">Cho phép thông báo đẩy</p>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="comment-notifications" class="sr-only peer" checked>
+                                  <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="py-4">
+                            <h4 class="font-semibold mb-2">Thẻ</h4>
+                             <div class="flex items-center justify-between">
+                                <p class="text-sm text-gray-500">Cho phép thông báo qua email</p>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="tag-notifications" class="sr-only peer">
+                                  <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="py-4">
+                            <h4 class="font-semibold mb-2">Lời mời kết bạn</h4>
+                             <div class="flex items-center justify-between">
+                                <p class="text-sm text-gray-500">Cho phép thông báo đẩy</p>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="friend-request-notifications" class="sr-only peer" checked>
+                                  <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                </label>
+                            </div>
+                        </div>
+                         <div class="py-4">
+                            <h4 class="font-semibold mb-2">Sinh nhật</h4>
+                             <div class="flex items-center justify-between">
+                                <p class="text-sm text-gray-500">Cho phép thông báo đẩy</p>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="birthday-notifications" class="sr-only peer" checked>
+                                  <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- View: Ngôn ngữ -->
+                 <div id="view-language" class="hidden">
+                    <h3 class="font-bold text-2xl mb-6">Ngôn ngữ và khu vực</h3>
+                    <div class="space-y-4 divide-y divide-gray-200">
+                        <div class="flex items-center justify-between py-4">
+                            <div>
+                                <h4 class="font-semibold">Ngôn ngữ</h4>
+                                <p id="user-language" class="text-sm text-gray-500">Tiếng Việt</p>
+                            </div>
+                            <button id="edit-language-btn" class="text-sm font-semibold text-blue-600 hover:underline">Chỉnh sửa</button>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- View: File phương tiện -->
+                 <div id="view-media" class="hidden">
+                    <h3 class="font-bold text-2xl mb-6">File phương tiện</h3>
+                     <div class="space-y-4 divide-y divide-gray-200">
+                        <div class="py-4">
+                            <h4 class="font-semibold mb-2">Tự động phát video</h4>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm text-gray-500">Video sẽ tự động phát khi có thể.</p>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="autoplay-video" class="sr-only peer" checked>
+                                  <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Xác thực 2 yếu tố -->
+    <div id="two-factor-auth-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg transform scale-95">
+            <div class="flex justify-between items-center p-4 border-b">
+                <button class="p-2 rounded-full hover:bg-gray-100 transition">
+                    <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                </button>
+                <h2 class="text-xl font-bold">Xác thực 2 yếu tố</h2>
+                <button id="close-2fa-modal-btn" class="p-2 rounded-full hover:bg-gray-100 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <p class="text-sm text-gray-600">Từ giờ, chúng tôi sẽ yêu cầu cung cấp mã đăng nhập mỗi khi bạn đăng nhập trên thiết bị lạ. <a href="#" class="text-blue-600">Tìm hiểu thêm</a></p>
+                <div>
+                    <h3 class="font-bold mb-2">Cách nhận mã đăng nhập</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50">
+                            <div>
+                                <h4 class="font-semibold text-green-600">Khuyên dùng</h4>
+                                <h5 class="font-bold">Ứng dụng xác thực</h5>
+                                <p class="text-sm text-gray-500">Bạn sẽ nhận được một mã đăng nhập từ ứng dụng xác thực.</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                        </a>
+                         <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50 border-t">
+                            <div>
+                                <h5 class="font-bold">Mã khôi phục</h5>
+                                <p class="text-sm text-gray-500">Sử dụng những mã này khi bạn không dùng được điện thoại.</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                        </a>
+                    </div>
+                </div>
+                 <div>
+                    <h3 class="font-bold mb-2">Thêm phương thức dự phòng</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50">
+                            <div>
+                                <h5 class="font-bold">SMS hoặc WhatsApp</h5>
+                                <p class="text-sm text-gray-500">Nhận mã đăng nhập bằng số điện thoại mà bạn chọn.</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                        </a>
+                         <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50 border-t">
+                            <div>
+                                <h5 class="font-bold">Khóa bảo mật</h5>
+                                <p class="text-sm text-gray-500">Dùng USB, Bluetooth hoặc khóa bảo mật NFC, chẳng hạn như Yubikey.</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Name -->
+    <div id="edit-name-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform scale-95">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-bold">Chỉnh sửa tên</h2>
+                <button id="close-edit-name-modal" class="p-2 rounded-full hover:bg-gray-100 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label for="edit-name-input" class="block text-sm font-medium text-gray-700 mb-2">Tên hiển thị</label>
+                    <input type="text" id="edit-name-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tên mới">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button id="cancel-edit-name" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition">Hủy</button>
+                    <button id="save-name" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Change Password -->
+    <div id="change-password-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform scale-95">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-bold">Đổi mật khẩu</h2>
+                <button id="close-change-password-modal" class="p-2 rounded-full hover:bg-gray-100 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label for="current-password" class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu hiện tại</label>
+                        <input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
+                        <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">Xác nhận mật khẩu mới</label>
+                        <input type="password" id="confirm-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button id="cancel-change-password" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition">Hủy</button>
+                    <button id="save-password" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Kiểm tra đăng nhập ngay lập tức - không có delay
+        const userInfo = localStorage.getItem('userInfo');
+        
+        // Nếu chưa đăng nhập, chuyển hướng ngay lập tức
+        if (!userInfo) {
+            window.location.replace('/login.html');
+        } else {
+            // Kiểm tra tính hợp lệ của thông tin đăng nhập
+            try {
+                const parsedUserInfo = JSON.parse(userInfo);
+                if (!parsedUserInfo.firstName || !parsedUserInfo.loginTime) {
+                    // Thông tin không hợp lệ, xóa và chuyển về login
+                    localStorage.removeItem('userInfo');
+                    window.location.replace('/login.html');
+                } else {
+                    // Kiểm tra thời gian đăng nhập (session timeout: 24h)
+                    const loginTime = new Date(parsedUserInfo.loginTime);
+                    const now = new Date();
+                    const timeDiff = now - loginTime;
+                    const hoursDiff = timeDiff / (1000 * 60 * 60);
+                    
+                    if (hoursDiff > 24) {
+                        // Session hết hạn
+                        localStorage.removeItem('userInfo');
+                        window.location.replace('/login.html');
+                    } else {
+                        // Đăng nhập hợp lệ, hiển thị trang
+                        document.body.classList.add('authenticated');
+                    }
+                }
+            } catch (error) {
+                // Lỗi parse JSON, xóa và chuyển về login
+                localStorage.removeItem('userInfo');
+                window.location.replace('/login.html');
+            }
+        }
+        
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Settings navigation
+            const nav = document.getElementById('settings-nav');
+            const links = nav.querySelectorAll('.sidebar-link');
+            
+            // Modal elements
+            const setup2faBtn = document.getElementById('setup-2fa-btn');
+            const twoFactorModal = document.getElementById('two-factor-auth-modal');
+            const close2faModalBtn = document.getElementById('close-2fa-modal-btn');
+            
+            const editNameBtn = document.getElementById('edit-name-btn');
+            const editNameModal = document.getElementById('edit-name-modal');
+            const closeEditNameModal = document.getElementById('close-edit-name-modal');
+            const cancelEditName = document.getElementById('cancel-edit-name');
+            const saveNameBtn = document.getElementById('save-name');
+            const editNameInput = document.getElementById('edit-name-input');
+            
+            const changePasswordBtn = document.getElementById('change-password-btn');
+            const changePasswordModal = document.getElementById('change-password-modal');
+            const closeChangePasswordModal = document.getElementById('close-change-password-modal');
+            const cancelChangePassword = document.getElementById('cancel-change-password');
+            const savePasswordBtn = document.getElementById('save-password');
+
+            const views = {
+                account: document.getElementById('view-account'),
+                security: document.getElementById('view-security'),
+                privacy: document.getElementById('view-privacy'),
+                notifications: document.getElementById('view-notifications'),
+                language: document.getElementById('view-language'),
+                media: document.getElementById('view-media')
+            };
+
+            // Navigation functionality
+            nav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const link = e.target.closest('.sidebar-link');
+                if (!link) return;
+
+                const viewName = link.dataset.view;
+                if (!viewName) return;
+
+                links.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                Object.values(views).forEach(view => {
+                    if (view) view.classList.add('hidden');
+                });
+                if (views[viewName]) {
+                    views[viewName].classList.remove('hidden');
+                }
+            });
+
+            // Modal functionality
+            const openModal = (modal) => {
+                const modalContent = modal.querySelector('div');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95');
+                }, 10);
+            };
+
+            const closeModal = (modal) => {
+                const modalContent = modal.querySelector('div');
+                modal.classList.add('opacity-0');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            };
+
+            // 2FA Modal
+            setup2faBtn.addEventListener('click', () => openModal(twoFactorModal));
+            close2faModalBtn.addEventListener('click', () => closeModal(twoFactorModal));
+            twoFactorModal.addEventListener('click', (e) => {
+                if (e.target === twoFactorModal) {
+                    closeModal(twoFactorModal);
+                }
+            });
+
+            // Edit Name Modal
+            editNameBtn.addEventListener('click', () => {
+                const currentName = document.getElementById('user-display-name').textContent;
+                editNameInput.value = currentName;
+                openModal(editNameModal);
+            });
+            closeEditNameModal.addEventListener('click', () => closeModal(editNameModal));
+            cancelEditName.addEventListener('click', () => closeModal(editNameModal));
+            
+            saveNameBtn.addEventListener('click', () => {
+                const newName = editNameInput.value.trim();
+                if (newName) {
+                    document.getElementById('user-display-name').textContent = newName;
+                    // Save to localStorage
+                    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    userInfo.firstName = newName;
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    closeModal(editNameModal);
+                }
+            });
+
+            // Change Password Modal
+            changePasswordBtn.addEventListener('click', () => openModal(changePasswordModal));
+            closeChangePasswordModal.addEventListener('click', () => closeModal(changePasswordModal));
+            cancelChangePassword.addEventListener('click', () => closeModal(changePasswordModal));
+            
+            savePasswordBtn.addEventListener('click', () => {
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                
+                if (newPassword !== confirmPassword) {
+                    alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
+                    return;
+                }
+                
+                if (newPassword.length < 6) {
+                    alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
+                    return;
+                }
+                
+                // Here you would normally send to backend
+                alert('Mật khẩu đã được cập nhật thành công!');
+                closeModal(changePasswordModal);
+                
+                // Clear form
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+            });
+
+            // Load user info from localStorage
+            const loadUserInfo = () => {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                if (userInfo.firstName) {
+                    document.getElementById('user-display-name').textContent = userInfo.firstName;
+                }
+                if (userInfo.email) {
+                    document.getElementById('user-email').textContent = userInfo.email;
+                }
+            };
+
+            // Save settings to localStorage
+            const saveSettings = () => {
+                const settings = {
+                    rememberLogin: document.getElementById('remember-login').checked,
+                    loginAlerts: document.getElementById('login-alerts').checked,
+                    commentNotifications: document.getElementById('comment-notifications').checked,
+                    tagNotifications: document.getElementById('tag-notifications').checked,
+                    friendRequestNotifications: document.getElementById('friend-request-notifications').checked,
+                    birthdayNotifications: document.getElementById('birthday-notifications').checked,
+                    autoplayVideo: document.getElementById('autoplay-video').checked
+                };
+                localStorage.setItem('userSettings', JSON.stringify(settings));
+            };
+
+            // Load settings from localStorage
+            const loadSettings = () => {
+                const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+                
+                if (settings.rememberLogin !== undefined) {
+                    document.getElementById('remember-login').checked = settings.rememberLogin;
+                }
+                if (settings.loginAlerts !== undefined) {
+                    document.getElementById('login-alerts').checked = settings.loginAlerts;
+                }
+                if (settings.commentNotifications !== undefined) {
+                    document.getElementById('comment-notifications').checked = settings.commentNotifications;
+                }
+                if (settings.tagNotifications !== undefined) {
+                    document.getElementById('tag-notifications').checked = settings.tagNotifications;
+                }
+                if (settings.friendRequestNotifications !== undefined) {
+                    document.getElementById('friend-request-notifications').checked = settings.friendRequestNotifications;
+                }
+                if (settings.birthdayNotifications !== undefined) {
+                    document.getElementById('birthday-notifications').checked = settings.birthdayNotifications;
+                }
+                if (settings.autoplayVideo !== undefined) {
+                    document.getElementById('autoplay-video').checked = settings.autoplayVideo;
+                }
+            };
+
+            // Add event listeners for settings toggles
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', saveSettings);
+            });
+
+            // Initialize
+            loadUserInfo();
+            loadSettings();
+        });
+    </script>
+</body>
+</html>

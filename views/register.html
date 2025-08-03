@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            position: relative;
+            overflow: hidden; /* Thêm thuộc tính này để ẩn thanh cuộn của trình duyệt */
+        }
+
+        /* --- NỀN LAVA LAMP --- */
+        #lava-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            filter: blur(30px) contrast(40);
+            background: #f0f2f5;
+        }
+
+        .blob {
+            position: absolute;
+            background-color: #333;
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+        }
+        
+        /* --- KEYFRAME ANIMATIONS --- */
+        @keyframes fadeInScaleUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- ÁP DỤNG ANIMATION VÀ STYLE --- */
+        .animate-fade-in-scale-up {
+            animation: fadeInScaleUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        /* --- Hiệu ứng Nhãn Nổi (Floating Label) --- */
+        .form-group {
+            position: relative;
+        }
+        .form-input {
+            border: 2px solid #e2e8f0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus, .form-input.focused {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-label {
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            background-color: white;
+            padding: 0 0.25rem;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+        }
+
+        .form-input:focus + .form-label,
+        .form-input:not(:placeholder-shown) + .form-label,
+        .form-group.has-value .form-label,
+        .form-group.focused .form-label {
+            top: 0;
+            transform: translateY(-50%) scale(0.85);
+            color: #000;
+            font-weight: 600;
+        }
+        
+        /* --- Icon hiển thị mật khẩu --- */
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #9ca3af;
+        }
+        .password-toggle:hover {
+            color: #333;
+        }
+
+        /* --- TÙY CHỈNH THANH CUỘN --- */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Ẩn thanh cuộn */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    
+    <!-- Container cho hiệu ứng lava lamp -->
+    <div id="lava-container"></div>
+
+    <!-- Card Đăng Ký Chính với hiệu ứng -->
+    <div class="w-full max-w-md p-8 lg:p-10 space-y-6 bg-white rounded-3xl shadow-2xl m-4 animate-fade-in-scale-up z-10 max-h-[90vh] overflow-y-auto no-scrollbar">
+        
+        <!-- Phần Header -->
+        <div class="text-center">
+            <h1 class="text-4xl font-extrabold text-gray-900">Tạo Tài Khoản</h1>
+            <p class="mt-2 text-base text-gray-600">Gia nhập đàn bò ngay hôm nay</p>
+        </div>
+
+        <!-- Form Đăng Ký -->
+        <form class="mt-8 space-y-6" id="register-form" method="POST" action="javascript:void(0);" onsubmit="return false;">
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <input id="last-name" name="last-name" type="text" autocomplete="family-name" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Họ">
+                        <label for="last-name" class="form-label">Họ</label>
+                    </div>
+                    <div class="form-group">
+                        <input id="first-name" name="first-name" type="text" autocomplete="given-name" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Tên">
+                        <label for="first-name" class="form-label">Tên</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input id="email-address" name="email" type="email" autocomplete="email" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Địa chỉ email">
+                    <label for="email-address" class="form-label">Địa chỉ email</label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-2 pl-1">Ngày sinh</label>
+                    <div class="grid grid-cols-6 gap-2">
+                        <!-- Day Input -->
+                        <div class="form-group col-span-2">
+                            <input id="birth-day" name="birth-day" type="text" maxlength="2" class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Ngày">
+                            <label for="birth-day" class="form-label">Ngày</label>
+                        </div>
+                        <!-- Month Input -->
+                        <div class="form-group col-span-2">
+                            <input id="birth-month" name="birth-month" type="text" maxlength="2" class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Tháng">
+                            <label for="birth-month" class="form-label">Tháng</label>
+                        </div>
+                        <!-- Year Input -->
+                        <div class="form-group col-span-2">
+                            <input id="birth-year" name="birth-year" type="text" maxlength="4" class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Năm">
+                            <label for="birth-year" class="form-label">Năm</label>
+                        </div>
+                    </div>
+                </div>
+                 <div>
+                    <label class="block text-sm font-medium text-gray-500 mb-2 pl-1">Giới tính</label>
+                    <div class="grid grid-cols-3 gap-2 rounded-lg p-1 bg-gray-100">
+                        <div>
+                            <input type="radio" name="gender" id="male" value="male" class="sr-only peer">
+                            <label for="male" class="block w-full text-center py-2 px-2 rounded-md cursor-pointer text-sm font-semibold text-gray-600 peer-checked:bg-white peer-checked:text-black peer-checked:shadow transition">Nam</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="gender" id="female" value="female" class="sr-only peer">
+                            <label for="female" class="block w-full text-center py-2 px-2 rounded-md cursor-pointer text-sm font-semibold text-gray-600 peer-checked:bg-white peer-checked:text-black peer-checked:shadow transition">Nữ</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="gender" id="other" value="other" class="sr-only peer">
+                            <label for="other" class="block w-full text-center py-2 px-2 rounded-md cursor-pointer text-sm font-semibold text-gray-600 peer-checked:bg-white peer-checked:text-black peer-checked:shadow transition">Khác</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input id="password" name="password" type="password" autocomplete="new-password" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Mật khẩu">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <span class="password-toggle" id="password-toggle-icon">
+                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7 .946-3.11 3.563-5.523 6.813-6.163M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c1.47 0 2.87.347 4.125.975m2.828 2.828A6.975 6.975 0 0119 12c-1.274 4.057-5.064 7-9.542 7-1.354 0-2.646-.3-3.825-.833M17.75 17.75L6.25 6.25" /></svg>
+                    </span>
+                </div>
+                 <div class="form-group">
+                    <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Xác nhận mật khẩu">
+                    <label for="confirm-password" class="form-label">Xác nhận mật khẩu</label>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="relative flex justify-center w-full px-4 py-3 text-base font-bold text-white bg-black border border-transparent rounded-lg group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-300 ease-in-out hover:bg-gray-800 hover:shadow-lg hover:-translate-y-1">
+                    Đăng Ký
+                </button>
+            </div>
+        </form>
+        
+        <p class="pt-4 text-sm text-center text-gray-600">
+            Đã là thành viên của đàn?
+            <a href="/login" class="font-semibold text-black hover:underline transition-colors duration-200 hover:text-gray-700">
+                Đăng nhập ngay
+            </a>
+        </p>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        window.onload = function() {
+            // Đợi một chút để các thư viện tải xong
+            setTimeout(() => {
+                // Check if required libraries are loaded
+                if (typeof axios === 'undefined') {
+                    console.error('Axios is not loaded!');
+                    // Thử tải lại axios với CDN khác
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/axios/dist/axios.min.js';
+                    script.onload = () => {
+                        console.log('Axios loaded successfully from fallback CDN');
+                        initializeApp();
+                    };
+                    script.onerror = () => {
+                        console.error('Failed to load axios from all CDNs');
+                        // Nếu vẫn không tải được, sử dụng fetch API thay thế
+                        window.axios = {
+                            post: async function(url, data) {
+                                const response = await fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(data)
+                                });
+                                const result = await response.json();
+                                if (!response.ok) {
+                                    throw new Error(result.message || 'Request failed');
+                                }
+                                return {
+                                    data: result,
+                                    status: response.status,
+                                    statusText: response.statusText
+                                };
+                            }
+                        };
+                        console.log('Using fetch API as axios fallback');
+                        initializeApp();
+                    };
+                    document.head.appendChild(script);
+                    return;
+                }
+                
+                console.log('All libraries loaded successfully');
+                initializeApp();
+            }, 200);
+        };
+
+        function initializeApp() {
+            console.log('🎯 initializeApp started');
+            console.log('🔍 Checking for form element...');
+            
+            // --- Logic tạo hiệu ứng lava lamp ---
+            const lavaContainer = document.getElementById('lava-container');
+            if (lavaContainer) {
+                const containerRect = lavaContainer.getBoundingClientRect();
+                const containerWidth = containerRect.width;
+                const containerHeight = containerRect.height;
+                const numberOfBlobs = 15;
+                const style = document.createElement('style');
+                document.head.appendChild(style);
+
+                for (let i = 0; i < numberOfBlobs; i++) {
+                    const blob = document.createElement('div');
+                    blob.classList.add('blob');
+                    const size = Math.random() * 250 + 100;
+                    const duration = Math.random() * 20 + 15;
+                    const delay = Math.random() * -15;
+                    const colors = ['#2d2d2d', '#333', '#404040', '#4a4a4a', '#555'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    const x1 = Math.random() * (containerWidth - size);
+                    const y1 = Math.random() * (containerHeight - size);
+                    const x2 = Math.random() * (containerWidth - size);
+                    const y2 = Math.random() * (containerHeight - size);
+                    const animationName = `move-blob-${i}`;
+                    style.sheet.insertRule(`
+                        @keyframes ${animationName} {
+                            0% { transform: translate(${x1}px, ${y1}px); }
+                            50% { transform: translate(${x2}px, ${y2}px); }
+                            100% { transform: translate(${x1}px, ${y1}px); }
+                        }
+                    `);
+                    blob.style.width = `${size}px`;
+                    blob.style.height = `${size}px`;
+                    blob.style.backgroundColor = color;
+                    blob.style.animation = `${animationName} ${duration}s ${delay}s linear infinite`;
+                    lavaContainer.appendChild(blob);
+                }
+            }
+
+            // --- Logic cho việc hiển thị/ẩn mật khẩu ---
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('password-toggle-icon');
+            const eyeOpen = document.getElementById('eye-open');
+            const eyeClosed = document.getElementById('eye-closed');
+
+            if (toggleIcon && passwordInput && eyeOpen && eyeClosed) {
+                toggleIcon.addEventListener('click', function () {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    eyeOpen.classList.toggle('hidden');
+                    eyeClosed.classList.toggle('hidden');
+                });
+                console.log('🔑 Password toggle functionality initialized');
+            } else {
+                console.warn('⚠️ Password toggle elements not found');
+            }
+
+            // --- Logic cho date input validation ---
+            function setupDateInputValidation() {
+                const dayInput = document.getElementById('birth-day');
+                const monthInput = document.getElementById('birth-month');
+                const yearInput = document.getElementById('birth-year');
+
+                if (!dayInput || !monthInput || !yearInput) {
+                    console.warn('⚠️ Date input elements not found');
+                    return;
+                }
+
+                console.log('📅 Date validation setup started');
+
+                if (!dayInput || !monthInput || !yearInput) {
+                    console.error('Date input elements not found!');
+                    return;
+                }
+
+                console.log('Date inputs found, setting up validation...');
+
+                // Chỉ cho phép nhập số
+                function allowOnlyNumbers(input) {
+                    input.addEventListener('input', function(e) {
+                        // Chỉ giữ lại các ký tự số
+                        this.value = this.value.replace(/[^0-9]/g, '');
+                    });
+
+                    input.addEventListener('keypress', function(e) {
+                        // Chỉ cho phép nhập số
+                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                            e.preventDefault();
+                        }
+                    });
+                }
+
+                // Hiển thị thông báo lỗi
+                function showFieldError(input, message) {
+                    input.style.borderColor = '#ef4444';
+                    input.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.1)';
+                    input.style.backgroundColor = '#fef2f2';
+                    input.setCustomValidity(message);
+                    
+                    // Tạo hoặc cập nhật thông báo lỗi
+                    let errorDiv = input.parentElement.querySelector('.error-message');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message text-xs text-red-500 mt-1 absolute left-0 top-full z-10';
+                        input.parentElement.style.position = 'relative';
+                        input.parentElement.appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = message;
+                    errorDiv.style.display = 'block';
+                }
+
+                // Xóa thông báo lỗi
+                function clearFieldError(input) {
+                    input.style.borderColor = '';
+                    input.style.boxShadow = '';
+                    input.style.backgroundColor = '';
+                    input.setCustomValidity('');
+                    
+                    const errorDiv = input.parentElement.querySelector('.error-message');
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+                }
+
+                // Validation cho ngày (1-31)
+                function validateDay(input) {
+                    function validate() {
+                        const value = parseInt(input.value);
+                        if (input.value === '') {
+                            clearFieldError(input);
+                            return;
+                        }
+                        if (isNaN(value) || value < 1 || value > 31) {
+                            showFieldError(input, 'Ngày phải từ 1 đến 31');
+                        } else {
+                            clearFieldError(input);
+                            // Kiểm tra validation tổng hợp
+                            setTimeout(validateFullDate, 100);
+                        }
+                    }
+                    
+                    input.addEventListener('input', validate);
+                    input.addEventListener('blur', validate);
+                    input.addEventListener('keyup', validate);
+                }
+
+                // Validation cho tháng (1-12)
+                function validateMonth(input) {
+                    function validate() {
+                        const value = parseInt(input.value);
+                        if (input.value === '') {
+                            clearFieldError(input);
+                            return;
+                        }
+                        if (isNaN(value) || value < 1 || value > 12) {
+                            showFieldError(input, 'Tháng phải từ 1 đến 12');
+                        } else {
+                            clearFieldError(input);
+                            // Kiểm tra validation tổng hợp
+                            setTimeout(validateFullDate, 100);
+                        }
+                    }
+                    
+                    input.addEventListener('input', validate);
+                    input.addEventListener('blur', validate);
+                    input.addEventListener('keyup', validate);
+                }
+
+                // Validation cho năm (1900 - năm hiện tại)
+                function validateYear(input) {
+                    function validate() {
+                        const value = parseInt(input.value);
+                        const currentYear = new Date().getFullYear();
+                        if (input.value === '') {
+                            clearFieldError(input);
+                            return;
+                        }
+                        if (isNaN(value) || value < 1900 || value > currentYear) {
+                            showFieldError(input, `Năm phải từ 1900 đến ${currentYear}`);
+                        } else {
+                            clearFieldError(input);
+                            // Kiểm tra validation tổng hợp
+                            setTimeout(validateFullDate, 100);
+                        }
+                    }
+                    
+                    input.addEventListener('input', validate);
+                    input.addEventListener('blur', validate);
+                    input.addEventListener('keyup', validate);
+                }
+
+                // Validation tổng hợp cho ngày hợp lệ
+                function validateFullDate() {
+                    const dayInput = document.getElementById('birth-day');
+                    const monthInput = document.getElementById('birth-month');
+                    const yearInput = document.getElementById('birth-year');
+
+                    if (!dayInput || !monthInput || !yearInput) {
+                        return true;
+                    }
+
+                    const day = parseInt(dayInput.value);
+                    const month = parseInt(monthInput.value);
+                    const year = parseInt(yearInput.value);
+
+                    // Chỉ validate nếu tất cả các field có giá trị và valid
+                    if (dayInput.value && monthInput.value && yearInput.value && 
+                        !isNaN(day) && !isNaN(month) && !isNaN(year) &&
+                        day >= 1 && day <= 31 && 
+                        month >= 1 && month <= 12 && 
+                        year >= 1900 && year <= new Date().getFullYear()) {
+                        
+                        // Kiểm tra ngày có hợp lệ trong tháng không
+                        const date = new Date(year, month - 1, day);
+                        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+                            showFieldError(dayInput, 'Ngày không hợp lệ trong tháng này');
+                            return false;
+                        } else {
+                            // Nếu đang có lỗi "không hợp lệ trong tháng" thì xóa đi
+                            const currentError = dayInput.parentElement.querySelector('.error-message');
+                            if (currentError && currentError.textContent === 'Ngày không hợp lệ trong tháng này') {
+                                clearFieldError(dayInput);
+                            }
+                            return true;
+                        }
+                    }
+                    return true;
+                }
+
+                // Áp dụng validation
+                allowOnlyNumbers(dayInput);
+                allowOnlyNumbers(monthInput);
+                allowOnlyNumbers(yearInput);
+
+                validateDay(dayInput);
+                validateMonth(monthInput);
+                validateYear(yearInput);
+
+                // Validation tổng hợp khi thay đổi bất kỳ field nào
+                [dayInput, monthInput, yearInput].forEach(input => {
+                    input.addEventListener('blur', validateFullDate);
+                });
+            }
+
+            // Setup date input validation
+            setupDateInputValidation();
+            
+            // --- Form validation and submission ---
+            function validateForm() {
+                const firstName = document.getElementById('first-name')?.value.trim() || '';
+                const lastName = document.getElementById('last-name')?.value.trim() || '';
+                const email = document.getElementById('email-address')?.value.trim() || '';
+                const day = document.getElementById('birth-day')?.value.trim() || '';
+                const month = document.getElementById('birth-month')?.value.trim() || '';
+                const year = document.getElementById('birth-year')?.value.trim() || '';
+                const password = document.getElementById('password')?.value || '';
+                const confirmPassword = document.getElementById('confirm-password')?.value || '';
+                
+                console.log('Validating form data:', { firstName, lastName, email, day, month, year });
+                
+                const errors = [];
+
+                if (!firstName) errors.push('Vui lòng nhập tên');
+                if (!lastName) errors.push('Vui lòng nhập họ');
+                if (!email) errors.push('Vui lòng nhập email');
+                if (!day || !month || !year) errors.push('Vui lòng nhập đầy đủ ngày sinh');
+                if (!password) errors.push('Vui lòng nhập mật khẩu');
+                if (password !== confirmPassword) errors.push('Mật khẩu xác nhận không khớp');
+                if (password.length < 6) errors.push('Mật khẩu phải có ít nhất 6 ký tự');
+
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (email && !emailRegex.test(email)) {
+                    errors.push('Email không hợp lệ');
+                }
+
+                // Validate date
+                if (day && month && year) {
+                    const dayNum = parseInt(day);
+                    const monthNum = parseInt(month);
+                    const yearNum = parseInt(year);
+                    
+                    if (dayNum < 1 || dayNum > 31) errors.push('Ngày phải từ 1 đến 31');
+                    if (monthNum < 1 || monthNum > 12) errors.push('Tháng phải từ 1 đến 12');
+                    if (yearNum < 1900 || yearNum > new Date().getFullYear()) {
+                        errors.push(`Năm phải từ 1900 đến ${new Date().getFullYear()}`);
+                    }
+                    
+                    // Validate actual date
+                    const date = new Date(yearNum, monthNum - 1, dayNum);
+                    if (date.getFullYear() !== yearNum || date.getMonth() !== monthNum - 1 || date.getDate() !== dayNum) {
+                        errors.push('Ngày không hợp lệ trong tháng này');
+                    }
+                }
+
+                // Check gender
+                const genderElement = document.querySelector('input[name="gender"]:checked');
+                if (!genderElement) {
+                    errors.push('Vui lòng chọn giới tính');
+                }
+
+                return { isValid: errors.length === 0, errors };
+            }
+
+            // Handle form submission
+            async function handleFormSubmit(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🚀 Form submission started');
+                
+                const validation = validateForm();
+                if (!validation.isValid) {
+                    console.error('❌ Form validation failed:', validation.errors);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi xác thực',
+                            html: validation.errors.join('<br>'),
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        alert('Lỗi:\n' + validation.errors.join('\n'));
+                    }
+                    return;
+                }
+
+                const firstName = document.getElementById('first-name').value.trim();
+                const lastName = document.getElementById('last-name').value.trim();
+                const email = document.getElementById('email-address').value.trim();
+                const day = document.getElementById('birth-day').value.trim();
+                const month = document.getElementById('birth-month').value.trim();
+                const year = document.getElementById('birth-year').value.trim();
+                const password = document.getElementById('password').value;
+                
+                console.log('📝 Form data extracted:', {
+                    firstName,
+                    lastName,
+                    email,
+                    day,
+                    month,
+                    year,
+                    passwordLength: password.length
+                });
+                
+                // Format birth date
+                const birthDateFormatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+                // Thu thập giới tính
+                const genderElement = document.querySelector('input[name="gender"]:checked');
+                const gender = genderElement ? genderElement.value : null;
+
+                const formData = {
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    birthDate: birthDateFormatted,
+                    gender,
+                    profile: {
+                        firstName,
+                        lastName
+                    }
+                };
+
+                console.log('📤 Submitting form data:', formData);
+                console.log('🔧 Using axios:', typeof axios !== 'undefined' ? 'Native axios' : 'Fallback fetch');
+
+                try {
+                    // Hiển thị loading
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<div class="loading-spinner"></div> Đang xử lý...';
+                    submitBtn.disabled = true;
+
+                    console.log('🌐 Sending POST request to /api/auth/register...');
+                    const response = await axios.post('/api/auth/register', formData);
+                    
+                    console.log('📈 Response status:', response.status);
+                    console.log('📋 Response data:', response.data);
+
+                    if (response.data.success) {
+                        console.log('🎉 Registration successful!');
+                        if (typeof Swal !== 'undefined') {
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Đăng ký thành công!',
+                                text: 'Chuyển hướng đến trang đăng nhập...',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            alert('Đăng ký thành công!');
+                        }
+                        
+                        console.log('🚀 Redirecting to /login...');
+                        window.location.href = '/login';
+                    } else {
+                        console.error('❌ Registration failed:', response.data.message);
+                        throw new Error(response.data.message || 'Đăng ký thất bại');
+                    }
+                } catch (error) {
+                    console.error('💥 Registration error occurred:', error);
+                    
+                    // Khôi phục button trước khi hiển thị lỗi
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    const originalText = 'Đăng Ký';
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    
+                    let errorMessage = 'Có lỗi xảy ra khi đăng ký';
+                    
+                    if (error.response) {
+                        // Server responded with error status
+                        console.error('🚫 Server error response:', error.response.data);
+                        console.error('📊 Error status:', error.response.status);
+                        errorMessage = error.response.data?.message || `Lỗi server (${error.response.status})`;
+                    } else if (error.message) {
+                        // Network error or other issues
+                        console.error('🌐 Network/Client error:', error.message);
+                        if (error.message.includes('404')) {
+                            errorMessage = 'Không tìm thấy API endpoint. Vui lòng kiểm tra server.';
+                        } else if (error.message.includes('Failed to fetch')) {
+                            errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+                        } else {
+                            errorMessage = error.message;
+                        }
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Đăng ký thất bại',
+                            text: errorMessage,
+                            confirmButtonText: 'Thử lại'
+                        });
+                    } else {
+                        alert('Đăng ký thất bại: ' + errorMessage);
+                    }
+                }
+            }
+
+            // Gắn event listener cho form
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', handleFormSubmit);
+                console.log('✅ Form event listener attached successfully');
+            } else {
+                console.error('❌ Register form not found! Check if form ID exists.');
+            }
+
+            console.log('🎉 Register page initialization completed!');
+
+            window.addEventListener('click', (e) => {
+                document.querySelectorAll('.form-group div.absolute').forEach(container => {
+                    if (!container.parentElement.contains(e.target) && !container.classList.contains('hidden')) {
+                        container.classList.add('hidden', 'opacity-0', 'scale-95');
+                        const button = container.parentElement.querySelector('button');
+                        const chevron = button.querySelector('svg');
+                        button.classList.remove('focused');
+                        if (chevron) chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

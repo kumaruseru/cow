@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bạn bè - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            overflow-x: hidden;
+            visibility: hidden;
+        }
+        
+        /* Chỉ hiển thị khi đã đăng nhập */
+        body.authenticated {
+            visibility: visible;
+        }
+        
+        /* --- TÙY CHỈNH THANH CUỘN --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Hiệu ứng Glassmorphism cho sidebar */
+        .glassmorphism-sidebar {
+            background-color: rgba(255, 255, 255, 0.7);
+            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        
+        /* Animation cho các mục */
+        @keyframes item-fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-item-in {
+            opacity: 0;
+            animation: item-fade-in 0.5s ease-out forwards;
+        }
+        
+        /* Style cho mục đang được chọn ở sidebar */
+        .sidebar-link.active {
+            background-color: #000;
+            color: #fff;
+        }
+        .sidebar-link.active i {
+            color: #fff !important;
+        }
+
+        /* Transition cho menu tùy chọn */
+        .options-menu {
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header chính -->
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="relative flex items-center justify-between h-16 px-4">
+            <!-- Cột Trái: Logo -->
+            <div class="flex items-center space-x-2">
+                <div class="flex-shrink-0">
+                    <svg class="w-10 h-10 text-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-5H8v-2h8v2z"/><path d="M19.36 8.64C18.48 7.52 17.3 6.66 16 6.18V4.05c1.73.64 3.22 1.76 4.36 3.14l-1 1.45zM4.64 8.64l-1-1.45C4.78 5.81 6.27 4.69 8 4.05v2.13c-1.3.48-2.48 1.34-3.36 2.46z"/><path d="M12 18c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4z" opacity=".5"/></svg>
+                </div>
+            </div>
+            
+            <!-- Cột Giữa: Navigation Icons -->
+            <nav class="hidden md:flex items-center justify-center space-x-2 absolute left-1/2 -translate-x-1/2">
+                <a href="/" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang chủ"><i data-lucide="home" class="w-6 h-6"></i></a>
+                <a href="/messages" class="p-3 rounded-full hover:bg-gray-100 transition" title="Tin nhắn"><i data-lucide="message-square" class="w-6 h-6"></i></a>
+                <a href="/notifications" class="p-3 rounded-full hover:bg-gray-100 transition relative" title="Thông báo">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </a>
+                <a href="/friends" class="p-3 rounded-full bg-gray-200 transition" title="Bạn bè"><i data-lucide="users" class="w-6 h-6"></i></a>
+                <a href="/profile" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang cá nhân"><i data-lucide="user" class="w-6 h-6"></i></a>
+            </nav>
+            
+            <!-- Cột Phải: Search & User Menu -->
+            <div class="flex items-center space-x-3">
+                <!-- Search -->
+                <div class="relative hidden lg:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                    </span>
+                    <input 
+                        id="header-search"
+                        type="search" 
+                        placeholder="Tìm kiếm..." 
+                        class="pl-10 pr-4 py-2 w-64 rounded-full bg-gray-100 border-transparent focus:bg-white focus:border-gray-300 focus:ring-0 transition text-sm"
+                    >
+                    <!-- Search Dropdown -->
+                    <div id="search-dropdown" class="hidden absolute top-full mt-2 w-full bg-white rounded-lg shadow-xl border z-50 max-h-96 overflow-y-auto">
+                        <div id="search-results">
+                            <!-- Search results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Avatar & Menu -->
+                <div class="relative">
+                    <button id="user-menu-btn" class="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition">
+                        <img id="user-avatar" src="https://placehold.co/32x32/000000/FFFFFF?text=U" alt="User" class="w-8 h-8 rounded-full">
+                    </button>
+                    
+                    <!-- User Dropdown Menu -->
+                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border z-50">
+                        <div class="p-4 border-b">
+                            <div class="flex items-center space-x-3">
+                                <img id="menu-user-avatar" src="https://placehold.co/48x48/000000/FFFFFF?text=U" alt="User" class="w-12 h-12 rounded-full">
+                                <div>
+                                    <div id="menu-user-name" class="font-semibold text-gray-900">Đang tải...</div>
+                                    <div id="menu-user-email" class="text-sm text-gray-500">Đang tải...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="py-2">
+                            <button data-action="view-my-profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                                <i data-lucide="user" class="w-4 h-4 mr-3"></i>Hồ sơ của tôi
+                            </button>
+                            <button data-action="show-settings" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                                <i data-lucide="settings" class="w-4 h-4 mr-3"></i>Cài đặt
+                            </button>
+                            <hr class="my-2">
+                            <button data-action="logout" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left">
+                                <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto h-[calc(100vh-64px)] p-4">
+        <div class="flex h-full rounded-3xl shadow-2xl overflow-hidden">
+            <!-- Left Sidebar -->
+            <aside class="hidden md:block w-1/4 glassmorphism-sidebar flex-col">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">Bạn bè</h2>
+                    </div>
+                    <nav id="friends-nav" class="space-y-2">
+                        <a href="#" data-view="home" class="sidebar-link active flex items-center font-semibold p-3 rounded-xl shadow-lg">
+                            <i data-lucide="home" class="w-5 h-5 mr-3"></i>
+                            <span>Trang chủ</span>
+                        </a>
+                        <a href="#" data-view="requests" class="sidebar-link group flex items-center font-semibold text-gray-600 hover:bg-black p-3 rounded-xl transition">
+                            <i data-lucide="user-plus" class="w-5 h-5 mr-3 text-gray-600 group-hover:text-white transition-colors"></i>
+                            <span class="group-hover:text-white transition-colors">Lời mời kết bạn</span>
+                        </a>
+                        <a href="#" data-view="suggestions" class="sidebar-link group flex items-center font-semibold text-gray-600 hover:bg-black p-3 rounded-xl transition">
+                            <i data-lucide="lightbulb" class="w-5 h-5 mr-3 text-gray-600 group-hover:text-white transition-colors"></i>
+                            <span class="group-hover:text-white transition-colors">Gợi ý</span>
+                        </a>
+                        <a href="#" data-view="all-friends" class="sidebar-link group flex items-center font-semibold text-gray-600 hover:bg-black p-3 rounded-xl transition">
+                            <i data-lucide="users" class="w-5 h-5 mr-3 text-gray-600 group-hover:text-white transition-colors"></i>
+                            <span class="group-hover:text-white transition-colors">Tất cả bạn bè</span>
+                        </a>
+                        <a href="#" data-view="birthdays" class="sidebar-link group flex items-center font-semibold text-gray-600 hover:bg-black p-3 rounded-xl transition">
+                            <i data-lucide="cake" class="w-5 h-5 mr-3 text-gray-600 group-hover:text-white transition-colors"></i>
+                            <span class="group-hover:text-white transition-colors">Sinh nhật</span>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Friends Content -->
+            <div class="w-full md:w-3/4 overflow-y-auto bg-white">
+                <!-- View: Trang chủ Bạn bè -->
+                <div id="view-home" class="p-8">
+                    <!-- Lời mời kết bạn -->
+                    <div class="mb-12">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-2xl">Lời mời kết bạn</h3>
+                            <a href="#" class="text-sm font-semibold text-blue-600 hover:underline">Xem tất cả</a>
+                        </div>
+                        <div id="home-requests-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <!-- Friend requests will be loaded here dynamically -->
+                            <div class="text-center text-gray-500 p-8 col-span-full">
+                                <i data-lucide="user-plus" class="w-16 h-16 mx-auto text-gray-300"></i>
+                                <p class="mt-4">Đang tải lời mời kết bạn...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Những người bạn có thể biết -->
+                    <div>
+                         <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-2xl">Những người bạn có thể biết</h3>
+                            <a href="#" class="text-sm font-semibold text-blue-600 hover:underline">Xem tất cả</a>
+                        </div>
+                         <div id="home-suggestions-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <!-- Friend suggestions will be loaded here dynamically -->
+                            <div class="text-center text-gray-500 p-8 col-span-full">
+                                <i data-lucide="lightbulb" class="w-16 h-16 mx-auto text-gray-300"></i>
+                                <p class="mt-4">Đang tải gợi ý bạn bè...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View: Lời mời kết bạn -->
+                <div id="view-requests" class="hidden h-full">
+                    <div class="flex h-full">
+                        <!-- Cột danh sách lời mời -->
+                        <aside class="w-1/3 border-r border-gray-200 flex flex-col h-full">
+                            <div class="p-4 border-b">
+                                <h3 class="font-bold text-xl">Lời mời kết bạn</h3>
+                                <span id="requests-count" class="text-sm text-gray-500">Đang tải...</span>
+                            </div>
+                            <div id="requests-list-container" class="flex-grow overflow-y-auto p-2 space-y-2">
+                                <!-- Request items will be loaded here dynamically -->
+                                <div class="text-center text-gray-500 p-8">
+                                    <i data-lucide="user-plus" class="w-16 h-16 mx-auto text-gray-300"></i>
+                                    <p class="mt-4">Đang tải lời mời kết bạn...</p>
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Cột xem trước -->
+                        <main class="w-2/3 flex flex-col items-center justify-center text-center p-8 bg-gray-50">
+                            <i data-lucide="users" class="w-24 h-24 text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-bold text-gray-700">Chọn tên của người mà bạn muốn xem</h3>
+                            <p class="text-gray-500">Xem trước trang cá nhân của họ tại đây.</p>
+                        </main>
+                    </div>
+                </div>
+
+                <!-- View: Gợi ý -->
+                <div id="view-suggestions" class="hidden h-full">
+                    <div class="flex h-full">
+                        <!-- Cột danh sách gợi ý -->
+                        <aside class="w-1/3 border-r border-gray-200 flex flex-col h-full">
+                            <div class="p-4 border-b">
+                                <h3 class="font-bold text-xl">Gợi ý</h3>
+                                <p class="text-sm text-gray-500">Những người bạn có thể biết</p>
+                            </div>
+                            <div id="suggestions-list-container" class="flex-grow overflow-y-auto p-2 space-y-2">
+                                <!-- Suggestion items will be loaded here dynamically -->
+                                <div class="text-center text-gray-500 p-8">
+                                    <i data-lucide="lightbulb" class="w-16 h-16 mx-auto text-gray-300"></i>
+                                    <p class="mt-4">Đang tải gợi ý bạn bè...</p>
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Cột xem trước -->
+                        <main class="w-2/3 flex flex-col items-center justify-center text-center p-8 bg-gray-50">
+                            <i data-lucide="users" class="w-24 h-24 text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-bold text-gray-700">Chọn tên của người mà bạn muốn xem</h3>
+                            <p class="text-gray-500">Xem trước trang cá nhân của họ tại đây.</p>
+                        </main>
+                    </div>
+                </div>
+
+                <!-- View: Tất cả bạn bè -->
+                <div id="view-all-friends" class="hidden h-full">
+                    <div class="flex h-full">
+                        <!-- Cột danh sách bạn bè -->
+                        <aside class="w-1/3 border-r border-gray-200 flex flex-col h-full">
+                            <div class="p-4 border-b">
+                                <h3 class="font-bold text-xl">Tất cả bạn bè</h3>
+                                <div class="relative mt-2">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                                    </span>
+                                    <input id="friends-search" type="search" placeholder="Tìm kiếm bạn bè..." class="w-full pl-9 pr-4 py-2 rounded-lg bg-gray-100 border-transparent focus:bg-white focus:border-gray-300 focus:ring-0 transition text-sm">
+                                </div>
+                            </div>
+                            <div id="all-friends-list-container" class="flex-grow overflow-y-auto p-2 space-y-1">
+                                <!-- Friends list will be loaded here dynamically -->
+                                <div class="text-center text-gray-500 p-8">
+                                    <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300"></i>
+                                    <p class="mt-4">Đang tải danh sách bạn bè...</p>
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Cột xem trước -->
+                        <main class="w-2/3 flex flex-col items-center justify-center text-center p-8 bg-gray-50">
+                            <i data-lucide="users" class="w-24 h-24 text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-bold text-gray-700">Chọn tên của người mà bạn muốn xem</h3>
+                            <p class="text-gray-500">Xem trước trang cá nhân của họ tại đây.</p>
+                        </main>
+                    </div>
+                </div>
+                
+                <!-- View: Sinh nhật -->
+                <div id="view-birthdays" class="hidden p-8">
+                     <h3 class="font-bold text-2xl mb-6">Sinh nhật</h3>
+                     <div id="birthdays-container" class="space-y-6">
+                        <!-- Birthday content will be loaded here dynamically -->
+                        <div class="text-center text-gray-500 p-8">
+                            <i data-lucide="cake" class="w-16 h-16 mx-auto text-gray-300"></i>
+                            <p class="mt-4">Đang tải thông tin sinh nhật...</p>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Authentication and initialization
+        console.log('=== FRIENDS PAGE DEBUG ===');
+        
+        // Check authentication
+        let userInfo = localStorage.getItem('userInfo') || localStorage.getItem('currentUser');
+        let authToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+        
+        console.log('userInfo exists:', !!userInfo);
+        console.log('authToken exists:', !!authToken);
+        
+        if (!userInfo || !authToken) {
+            console.log('Missing userInfo or authToken, redirecting to login');
+            window.location.replace('/login.html');
+        } else {
+            console.log('Authentication found, showing friends page');
+            document.body.classList.add('authenticated');
+        }
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Enhanced API Helper functions with rate limiting and caching
+        const requestQueue = new Map();
+        const apiCache = new Map();
+        
+        const apiCall = async (url, options = {}) => {
+            const currentToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            
+            // Generate cache key for GET requests
+            const cacheKey = options.method === 'GET' || !options.method ? url : null;
+            
+            // Check cache for GET requests (cache for 30 seconds)
+            if (cacheKey && apiCache.has(cacheKey)) {
+                const cached = apiCache.get(cacheKey);
+                if (Date.now() - cached.timestamp < 30000) {
+                    console.log('Using cached data for:', url);
+                    return cached.data;
+                }
+                apiCache.delete(cacheKey);
+            }
+            
+            // Rate limiting - prevent duplicate requests
+            const requestKey = `${url}_${JSON.stringify(options)}`;
+            if (requestQueue.has(requestKey)) {
+                console.log('Request already in progress, waiting...', url);
+                return requestQueue.get(requestKey);
+            }
+            
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            };
+            
+            const requestPromise = fetch(url, { ...defaultOptions, ...options })
+                .then(async response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('userInfo');
+                            localStorage.removeItem('accessToken');
+                            window.location.replace('/login.html');
+                            return;
+                        }
+                        
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Cache successful GET requests
+                    if (cacheKey && response.ok) {
+                        apiCache.set(cacheKey, {
+                            data,
+                            timestamp: Date.now()
+                        });
+                    }
+                    
+                    return data;
+                })
+                .finally(() => {
+                    requestQueue.delete(requestKey);
+                });
+            
+            requestQueue.set(requestKey, requestPromise);
+            return requestPromise;
+        };
+
+        // Friends API functions
+        const friendsAPI = {
+            getFriends: () => apiCall('/api/friends'),
+            getReceivedRequests: () => apiCall('/api/friends/requests/received'),
+            getSentRequests: () => apiCall('/api/friends/requests/sent'),
+            getSuggestions: () => apiCall('/api/friends/suggestions'),
+            getBirthdays: () => apiCall('/api/friends/birthdays'),
+            checkFriendshipStatus: (userId) => apiCall(`/api/friends/status/${userId}`),
+            sendFriendRequest: (recipientId) => apiCall('/api/friends/request', {
+                method: 'POST',
+                body: JSON.stringify({ recipientId })
+            }),
+            acceptFriendRequest: (requestId) => apiCall(`/api/friends/accept/${requestId}`, {
+                method: 'POST'
+            }),
+            rejectFriendRequest: (requestId) => apiCall(`/api/friends/reject/${requestId}`, {
+                method: 'POST'
+            }),
+            removeFriend: (friendId) => apiCall(`/api/friends/${friendId}`, {
+                method: 'DELETE'
+            }),
+            searchUsers: (query) => apiCall(`/api/friends/search?q=${encodeURIComponent(query)}&limit=20`),
+            ignoreSuggestion: (userId) => apiCall(`/api/friends/suggestions/ignore/${userId}`, {
+                method: 'POST'
+            })
+        };
+
+        // Cache management for persistence
+        const clearFriendshipCache = (userId) => {
+            // Clear all cache entries related to friendship
+            const keysToDelete = [];
+            for (const [key, value] of apiCache.entries()) {
+                if (key.includes('/api/friends') || key.includes(userId)) {
+                    keysToDelete.push(key);
+                }
+            }
+            keysToDelete.forEach(key => apiCache.delete(key));
+            console.log(`Cleared ${keysToDelete.length} cache entries for user ${userId}`);
+        };
+
+        // LocalStorage management for sent requests
+        const storeSentRequest = (recipientId) => {
+            const sentRequests = JSON.parse(localStorage.getItem('sentFriendRequests') || '[]');
+            if (!sentRequests.includes(recipientId)) {
+                sentRequests.push(recipientId);
+                localStorage.setItem('sentFriendRequests', JSON.stringify(sentRequests));
+            }
+        };
+
+        const getSentRequests = () => {
+            return JSON.parse(localStorage.getItem('sentFriendRequests') || '[]');
+        };
+
+        const removeSentRequest = (recipientId) => {
+            const sentRequests = getSentRequests();
+            const updated = sentRequests.filter(id => id !== recipientId);
+            localStorage.setItem('sentFriendRequests', JSON.stringify(updated));
+        };
+
+        // Load friends list
+        const loadFriends = async (forceRefresh = false) => {
+            try {
+                if (forceRefresh) {
+                    clearFriendshipCache();
+                }
+                const response = await friendsAPI.getFriends();
+                updateFriendsViews(response.friends || []);
+            } catch (error) {
+                console.error('Error loading friends:', error);
+                showError('Không thể tải danh sách bạn bè');
+            }
+        };
+
+        // Load friend requests
+        const loadFriendRequests = async (forceRefresh = false) => {
+            try {
+                if (forceRefresh) {
+                    clearFriendshipCache();
+                }
+                const response = await friendsAPI.getReceivedRequests();
+                updateRequestsViews(response.requests || []);
+            } catch (error) {
+                console.error('Error loading friend requests:', error);
+                showError('Không thể tải lời mời kết bạn');
+            }
+        };
+
+        // Load sent requests for tracking
+        const loadSentRequests = async () => {
+            try {
+                const response = await friendsAPI.getSentRequests();
+                updateSentRequestsTracking(response.requests || []);
+            } catch (error) {
+                console.error('Error loading sent requests:', error);
+                // Don't show error to user for this background operation
+            }
+        };
+
+        // Load friend suggestions
+        const loadFriendSuggestions = async (forceRefresh = false) => {
+            try {
+                if (forceRefresh) {
+                    clearFriendshipCache();
+                }
+                const response = await friendsAPI.getSuggestions();
+                const sentRequests = getSentRequests();
+                
+                // Filter out users we already sent requests to
+                const filteredSuggestions = (response.suggestions || []).filter(suggestion => {
+                    return !sentRequests.includes(suggestion._id);
+                });
+                
+                updateSuggestionsViews(filteredSuggestions);
+            } catch (error) {
+                console.error('Error loading friend suggestions:', error);
+                updateSuggestionsViews([]);
+            }
+        };
+
+        // Track sent requests to update UI accordingly
+        const updateSentRequestsTracking = (sentRequests) => {
+            const localSentRequests = getSentRequests();
+            
+            // Sync localStorage with server data
+            const serverSentIds = sentRequests.map(req => req.recipient._id);
+            
+            // Remove any local entries that are no longer pending on server
+            localSentRequests.forEach(localId => {
+                if (!serverSentIds.includes(localId)) {
+                    removeSentRequest(localId);
+                }
+            });
+            
+            // Update buttons for sent requests
+            serverSentIds.forEach(recipientId => {
+                const buttons = document.querySelectorAll(`button[onclick*="${recipientId}"]`);
+                buttons.forEach(button => {
+                    if (button.textContent.includes('Thêm bạn')) {
+                        button.innerHTML = 'Đã gửi lời mời';
+                        button.classList.remove('bg-black', 'hover:bg-gray-800');
+                        button.classList.add('bg-gray-400', 'cursor-not-allowed');
+                        button.disabled = true;
+                    }
+                });
+            });
+        };
+
+        // Load birthdays
+        const loadBirthdays = async () => {
+            try {
+                const response = await friendsAPI.getBirthdays();
+                updateBirthdaysView(response.birthdays || []);
+            } catch (error) {
+                console.error('Error loading birthdays:', error);
+                updateBirthdaysView([]);
+            }
+        };
+
+        // Update friends views with real data
+        const updateFriendsViews = (friends) => {
+            // Update All Friends view
+            const allFriendsContainer = document.getElementById('all-friends-list-container');
+            if (allFriendsContainer && friends.length > 0) {
+                allFriendsContainer.innerHTML = friends.map(friend => `
+                    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 cursor-pointer group">
+                        <div class="flex items-center space-x-3">
+                            <img src="${friend.profile?.avatar || `https://placehold.co/48x48/6B7280/FFFFFF?text=${friend.firstName?.charAt(0) || 'U'}`}" 
+                                 alt="${friend.firstName} ${friend.lastName}" 
+                                 class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <h4 class="font-bold">${friend.firstName} ${friend.lastName}</h4>
+                                <p class="text-xs text-gray-500">Bạn bè từ ${new Date(friend.friendsSince).toLocaleDateString('vi-VN')}</p>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <button class="options-btn p-2 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity" title="Tùy chọn">
+                                <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                            </button>
+                            <div class="options-menu hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl z-10 origin-top-right ring-1 ring-black ring-opacity-5 opacity-0 scale-95">
+                                <div class="py-1">
+                                    <button data-action="start-message" data-user-id="${friend._id}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><i data-lucide="message-square" class="w-5 h-5 mr-3"></i>Nhắn tin</button>
+                                    <button data-action="view-profile" data-user-id="${friend._id}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><i data-lucide="user" class="w-5 h-5 mr-3"></i>Xem hồ sơ</button>
+                                    <button data-action="remove-friend" data-user-id="${friend._id}" data-user-name="${friend.firstName} ${friend.lastName}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"><i data-lucide="user-x" class="w-5 h-5 mr-3"></i>Hủy kết bạn</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else if (allFriendsContainer) {
+                allFriendsContainer.innerHTML = `
+                    <div class="text-center text-gray-500 p-8">
+                        <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300"></i>
+                        <p class="mt-4">Bạn chưa có bạn bè nào.</p>
+                    </div>
+                `;
+            }
+            
+            // Update friend count in sidebar if needed
+            updateFriendCounts(friends.length);
+            
+            lucide.createIcons();
+        };
+
+        // Update requests views with real data
+        const updateRequestsViews = (requests) => {
+            // Update home view requests
+            const homeRequestsContainer = document.getElementById('home-requests-container');
+            const requestsViewContainer = document.getElementById('requests-list-container');
+            const requestsCount = document.getElementById('requests-count');
+            
+            if (requests.length > 0) {
+                const requestsHTML = requests.slice(0, 5).map((request, index) => `
+                    <div class="animate-item-in bg-gray-50 rounded-2xl shadow-md overflow-hidden transition-transform duration-300 hover:-translate-y-1" style="animation-delay: ${index * 100}ms;">
+                        <img src="${request.requester.profile?.avatar || `https://placehold.co/300x300/6B7280/FFFFFF?text=${request.requester.firstName?.charAt(0) || 'U'}`}" 
+                             alt="${request.requester.firstName} ${request.requester.lastName}" 
+                             class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h4 class="font-bold text-md truncate">${request.requester.firstName} ${request.requester.lastName}</h4>
+                            <div class="mt-3 grid grid-cols-2 gap-2">
+                                <button data-action="accept-friend" data-request-id="${request._id}" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition text-sm flex items-center justify-center">
+                                    <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                                    Xác nhận
+                                </button>
+                                <button data-action="reject-friend" data-request-id="${request._id}" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition text-sm flex items-center justify-center">
+                                    <i data-lucide="x" class="w-4 h-4 mr-1"></i>
+                                    Từ chối
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                if (homeRequestsContainer) {
+                    homeRequestsContainer.innerHTML = requestsHTML;
+                }
+                
+                // Update requests view with detailed list
+                if (requestsViewContainer) {
+                    requestsViewContainer.innerHTML = requests.map(request => `
+                        <div class="p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
+                            <div class="flex items-center space-x-3">
+                                <img src="${request.requester.profile?.avatar || `https://placehold.co/56x56/6B7280/FFFFFF?text=${request.requester.firstName?.charAt(0) || 'U'}`}" 
+                                     alt="${request.requester.firstName} ${request.requester.lastName}" 
+                                     class="w-14 h-14 rounded-full object-cover">
+                                <div>
+                                    <h4 class="font-bold">${request.requester.firstName} ${request.requester.lastName}</h4>
+                                    <p class="text-xs text-gray-500">${new Date(request.createdAt).toLocaleDateString('vi-VN')}</p>
+                                    <div class="mt-2 flex space-x-2">
+                                        <button data-action="accept-friend" data-request-id="${request._id}" class="px-4 py-1 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm flex items-center">
+                                            <i data-lucide="check" class="w-3 h-3 mr-1"></i>
+                                            Xác nhận
+                                        </button>
+                                        <button data-action="reject-friend" data-request-id="${request._id}" class="px-4 py-1 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition text-sm flex items-center">
+                                            <i data-lucide="x" class="w-3 h-3 mr-1"></i>
+                                            Từ chối
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Update count
+                if (requestsCount) {
+                    requestsCount.textContent = `${requests.length} lời mời mới`;
+                }
+            } else {
+                // Show empty state
+                const emptyStateHTML = `
+                    <div class="text-center text-gray-500 p-8">
+                        <i data-lucide="user-plus" class="w-16 h-16 mx-auto text-gray-300"></i>
+                        <p class="mt-4">Không có lời mời kết bạn nào.</p>
+                    </div>
+                `;
+                
+                if (homeRequestsContainer) {
+                    homeRequestsContainer.innerHTML = emptyStateHTML;
+                }
+                if (requestsViewContainer) {
+                    requestsViewContainer.innerHTML = emptyStateHTML;
+                }
+                if (requestsCount) {
+                    requestsCount.textContent = 'Không có lời mời nào';
+                }
+            }
+            
+            lucide.createIcons();
+        };
+
+        // Update suggestions views with real data
+        const updateSuggestionsViews = (suggestions) => {
+            const homeSuggestionsContainer = document.getElementById('home-suggestions-container');
+            const suggestionsViewContainer = document.getElementById('suggestions-list-container');
+            const sentRequests = getSentRequests();
+            
+            if (suggestions.length > 0) {
+                const suggestionsHTML = suggestions.slice(0, 5).map((suggestion, index) => {
+                    const isSent = sentRequests.includes(suggestion._id);
+                    const buttonText = isSent ? 'Đã gửi lời mời' : 'Thêm bạn bè';
+                    const buttonClass = isSent ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800';
+                    const buttonDisabled = isSent ? 'disabled' : '';
+                    
+                    return `
+                    <div class="animate-item-in bg-gray-50 rounded-2xl shadow-md overflow-hidden transition-transform duration-300 hover:-translate-y-1" style="animation-delay: ${(index + 2) * 100}ms;">
+                        <img src="${suggestion.profile?.avatar || `https://placehold.co/300x300/6B7280/FFFFFF?text=${suggestion.firstName?.charAt(0) || 'U'}`}" 
+                             alt="${suggestion.firstName} ${suggestion.lastName}" 
+                             class="w-full h-32 object-cover">
+                        <div class="p-3">
+                            <h4 class="font-bold text-md truncate">${suggestion.firstName} ${suggestion.lastName}</h4>
+                            <div class="mt-3">
+                                <button data-action="send-friend-request" data-user-id="${suggestion._id}" ${buttonDisabled} class="w-full ${buttonClass} text-white font-semibold py-2 rounded-lg transition text-sm">${buttonText}</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+                
+                if (homeSuggestionsContainer) {
+                    homeSuggestionsContainer.innerHTML = suggestionsHTML;
+                }
+                
+                // Update suggestions detailed view
+                if (suggestionsViewContainer) {
+                    suggestionsViewContainer.innerHTML = suggestions.map(suggestion => {
+                        const isSent = sentRequests.includes(suggestion._id);
+                        const buttonText = isSent ? 'Đã gửi' : 'Thêm bạn';
+                        const buttonClass = isSent ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800';
+                        const buttonDisabled = isSent ? 'disabled' : '';
+                        
+                        return `
+                        <div class="p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
+                            <div class="flex items-center space-x-3">
+                                <img src="${suggestion.profile?.avatar || `https://placehold.co/56x56/6B7280/FFFFFF?text=${suggestion.firstName?.charAt(0) || 'U'}`}" 
+                                     alt="${suggestion.firstName} ${suggestion.lastName}" 
+                                     class="w-14 h-14 rounded-full object-cover">
+                                <div>
+                                    <h4 class="font-bold">${suggestion.firstName} ${suggestion.lastName}</h4>
+                                    <p class="text-xs text-gray-500">${suggestion.mutualFriends || 0} bạn chung</p>
+                                    <div class="mt-2 flex space-x-2">
+                                        <button data-action="send-friend-request" data-user-id="${suggestion._id}" ${buttonDisabled} class="px-4 py-1 ${buttonClass} text-white font-semibold rounded-lg transition text-sm">${buttonText}</button>
+                                        <button data-action="ignore-suggestion" data-user-id="${suggestion._id}" class="px-4 py-1 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition text-sm">Bỏ qua</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                }
+            } else {
+                const emptyStateHTML = `
+                    <div class="text-center text-gray-500 p-8">
+                        <i data-lucide="lightbulb" class="w-16 h-16 mx-auto text-gray-300"></i>
+                        <p class="mt-4">Không có gợi ý bạn bè nào.</p>
+                    </div>
+                `;
+                
+                if (homeSuggestionsContainer) {
+                    homeSuggestionsContainer.innerHTML = emptyStateHTML;
+                }
+                if (suggestionsViewContainer) {
+                    suggestionsViewContainer.innerHTML = emptyStateHTML;
+                }
+            }
+            
+            lucide.createIcons();
+        };
+
+        // Update birthdays view with real data
+        const updateBirthdaysView = (birthdays) => {
+            const birthdaysContainer = document.getElementById('birthdays-container');
+            
+            if (birthdays.length > 0) {
+                const today = new Date();
+                const recentBirthdays = birthdays.filter(b => {
+                    const birthdayDate = new Date(b.birthday);
+                    const daysDiff = Math.abs(today - birthdayDate) / (1000 * 60 * 60 * 24);
+                    return daysDiff <= 7;
+                });
+                
+                const upcomingBirthdays = birthdays.filter(b => {
+                    const birthdayDate = new Date(b.birthday);
+                    return birthdayDate > today;
+                });
+                
+                let birthdaysHTML = '';
+                
+                if (recentBirthdays.length > 0) {
+                    birthdaysHTML += `
+                        <div>
+                            <h4 class="font-semibold text-lg text-gray-700 mb-3">Sinh nhật gần đây</h4>
+                            <div class="space-y-3">
+                                ${recentBirthdays.map(birthday => `
+                                    <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-xl">
+                                        <img src="${birthday.profile?.avatar || `https://placehold.co/56x56/6B7280/FFFFFF?text=${birthday.firstName?.charAt(0) || 'U'}`}" 
+                                             alt="${birthday.firstName} ${birthday.lastName}" 
+                                             class="w-14 h-14 rounded-full object-cover">
+                                        <div>
+                                            <h5 class="font-bold">${birthday.firstName} ${birthday.lastName}</h5>
+                                            <p class="text-sm text-gray-500">Sinh nhật ${new Date(birthday.birthday).toLocaleDateString('vi-VN')}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (upcomingBirthdays.length > 0) {
+                    const currentMonth = today.getMonth();
+                    const monthName = new Date(today.getFullYear(), currentMonth).toLocaleDateString('vi-VN', { month: 'long' });
+                    
+                    birthdaysHTML += `
+                        <div>
+                            <h4 class="font-semibold text-lg text-gray-700 mb-3">${monthName}</h4>
+                            <div class="space-y-3">
+                                ${upcomingBirthdays.slice(0, 10).map(birthday => `
+                                    <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-xl">
+                                        <img src="${birthday.profile?.avatar || `https://placehold.co/56x56/6B7280/FFFFFF?text=${birthday.firstName?.charAt(0) || 'U'}`}" 
+                                             alt="${birthday.firstName} ${birthday.lastName}" 
+                                             class="w-14 h-14 rounded-full object-cover">
+                                        <div>
+                                            <h5 class="font-bold">${birthday.firstName} ${birthday.lastName}</h5>
+                                            <p class="text-sm text-gray-500">Sinh nhật ${new Date(birthday.birthday).toLocaleDateString('vi-VN')}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (birthdaysContainer) {
+                    birthdaysContainer.innerHTML = birthdaysHTML || `
+                        <div class="text-center text-gray-500 p-8">
+                            <i data-lucide="cake" class="w-16 h-16 mx-auto text-gray-300"></i>
+                            <p class="mt-4">Không có sinh nhật nào trong thời gian gần đây.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                if (birthdaysContainer) {
+                    birthdaysContainer.innerHTML = `
+                        <div class="text-center text-gray-500 p-8">
+                            <i data-lucide="cake" class="w-16 h-16 mx-auto text-gray-300"></i>
+                            <p class="mt-4">Không có thông tin sinh nhật nào.</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            lucide.createIcons();
+        };
+
+        // Update friend counts in UI
+        const updateFriendCounts = (friendCount) => {
+            const requestsTitle = document.querySelector('#view-requests h3');
+            if (requestsTitle) {
+                // Update requests count if needed
+            }
+        };
+
+        // Friend action functions with enhanced functionality
+        const sendFriendRequest = async (recipientId, buttonElement = null) => {
+            // Prevent double-clicking
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i>Đang gửi...';
+            }
+
+            try {
+                // Validate recipientId
+                if (!recipientId || recipientId.trim() === '') {
+                    throw new Error('ID người nhận không hợp lệ');
+                }
+
+                // Check if already friends or request pending
+                const checkResponse = await friendsAPI.checkFriendshipStatus(recipientId);
+                
+                if (checkResponse.status === 'accepted') {
+                    showError('Bạn đã là bạn bè với người này');
+                    return;
+                }
+                
+                if (checkResponse.status === 'pending') {
+                    if (checkResponse.perspective === 'sent') {
+                        showError('Bạn đã gửi lời mời kết bạn cho người này');
+                        return;
+                    } else {
+                        showError('Người này đã gửi lời mời kết bạn cho bạn');
+                        return;
+                    }
+                }
+
+                // Send friend request
+                const response = await friendsAPI.sendFriendRequest(recipientId);
+                
+                showSuccess('Đã gửi lời mời kết bạn thành công');
+                
+                // CRITICAL: Clear all related cache to ensure fresh data
+                clearFriendshipCache(recipientId);
+                
+                // Update UI immediately with permanent state
+                if (buttonElement) {
+                    buttonElement.innerHTML = 'Đã gửi lời mời';
+                    buttonElement.classList.remove('bg-black', 'hover:bg-gray-800');
+                    buttonElement.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    buttonElement.setAttribute('data-request-sent', 'true');
+                }
+                
+                // Store sent request in localStorage for persistence
+                storeSentRequest(recipientId);
+                
+                // Force refresh all friend-related data immediately (không delay)
+                await Promise.all([
+                    loadFriendSuggestions(true), // Force refresh
+                    loadFriendRequests(true),     // Force refresh
+                    loadSentRequests()            // Load sent requests to track
+                ]);
+                
+                // Refresh search results if active
+                const searchInput = document.getElementById('header-search');
+                if (searchInput && searchInput.value.trim().length >= 2) {
+                    await performSearch(searchInput.value.trim());
+                }
+                
+            } catch (error) {
+                console.error('Error sending friend request:', error);
+                
+                let errorMessage = 'Không thể gửi lời mời kết bạn';
+                if (error.message.includes('already friends')) {
+                    errorMessage = 'Bạn đã là bạn bè với người này';
+                } else if (error.message.includes('request exists')) {
+                    errorMessage = 'Lời mời kết bạn đã tồn tại';
+                } else if (error.message.includes('yourself')) {
+                    errorMessage = 'Bạn không thể gửi lời mời kết bạn cho chính mình';
+                } else if (error.message.includes('not found')) {
+                    errorMessage = 'Không tìm thấy người dùng';
+                }
+                
+                showError(errorMessage);
+                
+                // Reset button state
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = 'Thêm bạn bè';
+                    buttonElement.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    buttonElement.classList.add('bg-black', 'hover:bg-gray-800');
+                    buttonElement.removeAttribute('data-request-sent');
+                }
+            }
+        };
+
+        const acceptFriendRequest = async (requestId, buttonElement = null) => {
+            // Prevent double-clicking
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i>Đang xử lý...';
+                lucide.createIcons();
+            }
+
+            try {
+                if (!requestId || requestId.trim() === '') {
+                    throw new Error('ID lời mời không hợp lệ');
+                }
+
+                await friendsAPI.acceptFriendRequest(requestId);
+                showSuccess('Đã chấp nhận lời mời kết bạn');
+                
+                // Clear all caches to ensure fresh data
+                clearFriendshipCache();
+                
+                // Remove the request item from UI immediately
+                if (buttonElement) {
+                    const requestItem = buttonElement.closest('.p-3, .animate-item-in');
+                    if (requestItem) {
+                        requestItem.style.opacity = '0';
+                        setTimeout(() => {
+                            requestItem.remove();
+                        }, 300);
+                    }
+                }
+                
+                // Refresh data with force refresh
+                setTimeout(async () => {
+                    await Promise.all([
+                        loadFriendRequests(true),
+                        loadFriends(true),
+                        loadFriendSuggestions(true)
+                    ]);
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error accepting friend request:', error);
+                
+                let errorMessage = 'Không thể chấp nhận lời mời kết bạn';
+                if (error.message.includes('not found')) {
+                    errorMessage = 'Lời mời kết bạn không tồn tại';
+                } else if (error.message.includes('already accepted')) {
+                    errorMessage = 'Lời mời này đã được chấp nhận';
+                }
+                
+                showError(errorMessage);
+                
+                // Reset button state
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = '<i data-lucide="check" class="w-3 h-3 mr-1"></i>Xác nhận';
+                    lucide.createIcons();
+                }
+            }
+        };
+
+        const rejectFriendRequest = async (requestId, buttonElement = null) => {
+            // Prevent double-clicking
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i>Đang xử lý...';
+                lucide.createIcons();
+            }
+
+            try {
+                if (!requestId || requestId.trim() === '') {
+                    throw new Error('ID lời mời không hợp lệ');
+                }
+
+                await friendsAPI.rejectFriendRequest(requestId);
+                showSuccess('Đã từ chối lời mời kết bạn');
+                
+                // Clear all caches to ensure fresh data
+                clearFriendshipCache();
+                
+                // Remove the request item from UI immediately
+                if (buttonElement) {
+                    const requestItem = buttonElement.closest('.p-3, .animate-item-in');
+                    if (requestItem) {
+                        requestItem.style.opacity = '0';
+                        setTimeout(() => {
+                            requestItem.remove();
+                        }, 300);
+                    }
+                }
+                
+                // Refresh data with force refresh
+                setTimeout(async () => {
+                    await Promise.all([
+                        loadFriendRequests(true),
+                        loadFriends(true),
+                        loadFriendSuggestions(true)
+                    ]);
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error rejecting friend request:', error);
+                
+                let errorMessage = 'Không thể từ chối lời mời kết bạn';
+                if (error.message.includes('not found')) {
+                    errorMessage = 'Lời mời kết bạn không tồn tại';
+                }
+                
+                showError(errorMessage);
+                
+                // Reset button state
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = '<i data-lucide="x" class="w-3 h-3 mr-1"></i>Từ chối';
+                    lucide.createIcons();
+                }
+            }
+        };
+
+        const removeFriend = async (friendId, friendName) => {
+            if (!confirm(`Bạn có chắc muốn hủy kết bạn với ${friendName}?`)) {
+                return;
+            }
+            
+            try {
+                await friendsAPI.removeFriend(friendId);
+                showSuccess('Đã hủy kết bạn');
+                await loadFriends();
+            } catch (error) {
+                console.error('Error removing friend:', error);
+                showError('Không thể hủy kết bạn');
+            }
+        };
+
+        const ignoreSuggestion = async (userId, buttonElement = null) => {
+            // Prevent double-clicking
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i>Đang xử lý...';
+            }
+
+            try {
+                if (!userId || userId.trim() === '') {
+                    throw new Error('ID người dùng không hợp lệ');
+                }
+
+                await friendsAPI.ignoreSuggestion(userId);
+                showSuccess('Đã bỏ qua gợi ý');
+                
+                // Remove the suggestion item from UI immediately
+                if (buttonElement) {
+                    const suggestionItem = buttonElement.closest('.p-3, .animate-item-in');
+                    if (suggestionItem) {
+                        suggestionItem.style.opacity = '0';
+                        setTimeout(() => {
+                            suggestionItem.remove();
+                        }, 300);
+                    }
+                }
+                
+                // Refresh suggestions
+                setTimeout(async () => {
+                    await loadFriendSuggestions();
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error ignoring suggestion:', error);
+                
+                let errorMessage = 'Không thể bỏ qua gợi ý';
+                if (error.message.includes('not found')) {
+                    errorMessage = 'Gợi ý không tồn tại';
+                }
+                
+                showError(errorMessage);
+                
+                // Reset button state
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = 'Bỏ qua';
+                }
+            }
+        };
+
+        // Utility functions
+        const startMessage = (userId) => {
+            window.location.href = `/messages.html?user=${userId}`;
+        };
+
+        const viewProfile = (userId) => {
+            showProfilePreview(userId);
+        };
+
+        // Profile Preview Modal Functions
+        async function showProfilePreview(userId) {
+            try {
+                const modal = document.getElementById('profile-preview-modal');
+                const response = await fetch(`/api/profile/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile');
+                }
+
+                const userData = await response.json();
+                populateProfilePreview(userData);
+                modal.classList.remove('hidden');
+                
+                // Re-initialize Lucide icons
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Error loading profile preview:', error);
+                showToast('Không thể tải thông tin người dùng', 'error');
+            }
+        }
+
+        function populateProfilePreview(userData) {
+            // Basic info
+            document.getElementById('preview-avatar').src = userData.avatar || '/images/default-avatar.png';
+            document.getElementById('preview-name').textContent = userData.fullName || userData.name || 'Unknown User';
+            
+            // Cover photo
+            const coverImg = document.getElementById('preview-cover-img');
+            const coverDiv = document.getElementById('preview-cover');
+            if (userData.coverPhoto) {
+                coverImg.src = userData.coverPhoto;
+                coverImg.classList.remove('hidden');
+                coverDiv.classList.add('hidden');
+            } else {
+                coverImg.classList.add('hidden');
+                coverDiv.classList.remove('hidden');
+            }
+
+            // Mutual friends
+            const mutualCount = userData.mutualFriendsCount || 0;
+            document.getElementById('preview-mutual-friends').textContent = 
+                mutualCount > 0 ? `${mutualCount} bạn chung` : '';
+
+            // About section
+            const aboutDiv = document.getElementById('preview-about');
+            aboutDiv.innerHTML = '';
+            
+            if (userData.bio) {
+                const bioDiv = document.createElement('div');
+                bioDiv.innerHTML = `<i data-lucide="info" class="w-4 h-4 inline mr-2"></i>${userData.bio}`;
+                aboutDiv.appendChild(bioDiv);
+            }
+            
+            if (userData.location) {
+                const locationDiv = document.createElement('div');
+                locationDiv.innerHTML = `<i data-lucide="map-pin" class="w-4 h-4 inline mr-2"></i>Sống tại ${userData.location}`;
+                aboutDiv.appendChild(locationDiv);
+            }
+            
+            if (userData.workplace) {
+                const workDiv = document.createElement('div');
+                workDiv.innerHTML = `<i data-lucide="briefcase" class="w-4 h-4 inline mr-2"></i>Làm việc tại ${userData.workplace}`;
+                aboutDiv.appendChild(workDiv);
+            }
+            
+            if (userData.education) {
+                const eduDiv = document.createElement('div');
+                eduDiv.innerHTML = `<i data-lucide="graduation-cap" class="w-4 h-4 inline mr-2"></i>Học tại ${userData.education}`;
+                aboutDiv.appendChild(eduDiv);
+            }
+
+            // Update action buttons
+            const addFriendBtn = document.getElementById('preview-add-friend-btn');
+            const friendshipStatus = userData.friendshipStatus || 'none';
+            
+            switch (friendshipStatus) {
+                case 'friends':
+                    addFriendBtn.innerHTML = '<i data-lucide="user-check" class="w-4 h-4 mr-2"></i>Bạn bè';
+                    addFriendBtn.className = 'flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold cursor-default flex items-center justify-center';
+                    addFriendBtn.disabled = true;
+                    break;
+                case 'pending':
+                    addFriendBtn.innerHTML = '<i data-lucide="clock" class="w-4 h-4 mr-2"></i>Đã gửi lời mời';
+                    addFriendBtn.className = 'flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold cursor-default flex items-center justify-center';
+                    addFriendBtn.disabled = true;
+                    break;
+                case 'received':
+                    addFriendBtn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>Chấp nhận';
+                    addFriendBtn.className = 'flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center';
+                    addFriendBtn.disabled = false;
+                    addFriendBtn.onclick = () => acceptFriendRequest(userData.id);
+                    break;
+                default:
+                    addFriendBtn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>Kết bạn';
+                    addFriendBtn.className = 'flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center';
+                    addFriendBtn.disabled = false;
+                    addFriendBtn.onclick = () => sendFriendRequestFromPreview(userData.id);
+                    break;
+            }
+
+            // Message button
+            document.getElementById('preview-message-btn').onclick = () => {
+                window.location.href = `/messages.html?user=${userData.id}`;
+            };
+
+            // View full profile button
+            document.getElementById('preview-view-full-btn').onclick = () => {
+                window.location.href = `/profile.html?user=${userData.id}`;
+            };
+        }
+
+        async function sendFriendRequestFromPreview(userId) {
+            try {
+                const btn = document.getElementById('preview-add-friend-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Đang gửi...';
+
+                const response = await fetch('/api/friend-request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ recipientId: userId })
+                });
+
+                if (response.ok) {
+                    btn.innerHTML = '<i data-lucide="clock" class="w-4 h-4 mr-2"></i>Đã gửi lời mời';
+                    btn.className = 'flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold cursor-default flex items-center justify-center';
+                    showToast('Đã gửi lời mời kết bạn', 'success');
+                    
+                    // Update cache
+                    invalidateCache('friends');
+                    invalidateCache('friend-requests');
+                } else {
+                    throw new Error('Failed to send friend request');
+                }
+            } catch (error) {
+                console.error('Error sending friend request:', error);
+                showToast('Có lỗi xảy ra khi gửi lời mời', 'error');
+                
+                // Reset button
+                const btn = document.getElementById('preview-add-friend-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>Kết bạn';
+            }
+            
+            lucide.createIcons();
+        }
+
+        const viewMyProfile = () => {
+            window.location.href = '/profile.html';
+        };
+
+        const showSettings = () => {
+            window.location.href = '/settings.html';
+        };
+
+        const logout = () => {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                localStorage.removeItem('userInfo');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('token');
+                window.location.replace('/login.html');
+            }
+        };
+
+        const showSuccess = (message) => {
+            // Remove existing toasts
+            document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            toast.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Initialize icons and animate in
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        };
+
+        const showError = (message) => {
+            // Remove existing toasts
+            document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            toast.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Initialize icons and animate in
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000); // Error messages stay longer
+        };
+
+        const showInfo = (message) => {
+            // Remove existing toasts
+            document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            toast.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Initialize icons and animate in
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        };
+
+        // Setup friends search functionality
+        const setupFriendsSearch = () => {
+            const friendsSearchInput = document.getElementById('friends-search');
+            let searchTimeout;
+
+            if (!friendsSearchInput) return;
+
+            friendsSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                
+                clearTimeout(searchTimeout);
+                
+                searchTimeout = setTimeout(() => {
+                    filterFriendsList(query);
+                }, 300);
+            });
+        };
+
+        // Filter friends list based on search query
+        const filterFriendsList = (query) => {
+            const allFriendsContainer = document.getElementById('all-friends-list-container');
+            if (!allFriendsContainer) return;
+
+            const friendItems = allFriendsContainer.querySelectorAll('.group');
+            
+            friendItems.forEach(item => {
+                const nameElement = item.querySelector('h4');
+                if (nameElement) {
+                    const name = nameElement.textContent.toLowerCase();
+                    if (name.includes(query) || query === '') {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        };
+
+        // Batch operations for better performance
+        const batchAcceptRequests = async (requestIds) => {
+            if (!Array.isArray(requestIds) || requestIds.length === 0) return;
+            
+            try {
+                showInfo(`Đang xử lý ${requestIds.length} lời mời...`);
+                
+                await apiCall('/api/friends/batch/accept', {
+                    method: 'POST',
+                    body: JSON.stringify({ requestIds })
+                });
+                
+                showSuccess(`Đã chấp nhận ${requestIds.length} lời mời kết bạn`);
+                
+                // Refresh data
+                await Promise.all([
+                    loadFriendRequests(),
+                    loadFriends(),
+                    loadFriendSuggestions()
+                ]);
+                
+            } catch (error) {
+                console.error('Error batch accepting requests:', error);
+                showError('Không thể xử lý hàng loạt lời mời');
+            }
+        };
+
+        const batchRejectRequests = async (requestIds) => {
+            if (!Array.isArray(requestIds) || requestIds.length === 0) return;
+            
+            try {
+                showInfo(`Đang từ chối ${requestIds.length} lời mời...`);
+                
+                await apiCall('/api/friends/batch/reject', {
+                    method: 'POST',
+                    body: JSON.stringify({ requestIds })
+                });
+                
+                showSuccess(`Đã từ chối ${requestIds.length} lời mời kết bạn`);
+                
+                // Refresh data
+                await loadFriendRequests();
+                
+            } catch (error) {
+                console.error('Error batch rejecting requests:', error);
+                showError('Không thể từ chối hàng loạt lời mời');
+            }
+        };
+
+        // Add bulk actions UI for requests
+        const setupBatchActions = () => {
+            const requestsContainer = document.getElementById('requests-list-container');
+            if (!requestsContainer) return;
+
+            // Add batch action buttons to requests view
+            const requestsHeader = document.querySelector('#view-requests .p-4.border-b');
+            if (requestsHeader && !requestsHeader.querySelector('.batch-actions')) {
+                const batchActionsHTML = `
+                    <div class="batch-actions mt-3 hidden">
+                        <div class="flex space-x-2">
+                            <button data-action="batch-accept-selected" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm">
+                                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>Chấp nhận tất cả
+                            </button>
+                            <button data-action="batch-reject-selected" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm">
+                                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>Từ chối tất cả
+                            </button>
+                            <button data-action="clear-selection" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
+                                Bỏ chọn
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-500 mt-2">
+                            <span id="selected-count">0</span> lời mời được chọn
+                        </div>
+                    </div>
+                `;
+                requestsHeader.insertAdjacentHTML('beforeend', batchActionsHTML);
+                lucide.createIcons();
+            }
+        };
+
+        // Batch action handlers
+        window.batchAcceptSelected = () => {
+            const selectedIds = getSelectedRequestIds();
+            if (selectedIds.length === 0) {
+                showError('Vui lòng chọn ít nhất một lời mời');
+                return;
+            }
+            
+            if (confirm(`Bạn có chắc muốn chấp nhận ${selectedIds.length} lời mời kết bạn?`)) {
+                batchAcceptRequests(selectedIds);
+            }
+        };
+
+        window.batchRejectSelected = () => {
+            const selectedIds = getSelectedRequestIds();
+            if (selectedIds.length === 0) {
+                showError('Vui lòng chọn ít nhất một lời mời');
+                return;
+            }
+            
+            if (confirm(`Bạn có chắc muốn từ chối ${selectedIds.length} lời mời kết bạn?`)) {
+                batchRejectRequests(selectedIds);
+            }
+        };
+
+        window.clearSelection = () => {
+            document.querySelectorAll('.request-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateBatchActionsVisibility();
+        };
+
+        const getSelectedRequestIds = () => {
+            const selectedCheckboxes = document.querySelectorAll('.request-checkbox:checked');
+            return Array.from(selectedCheckboxes).map(checkbox => checkbox.dataset.requestId);
+        };
+
+        const updateBatchActionsVisibility = () => {
+            const selectedCount = getSelectedRequestIds().length;
+            const batchActions = document.querySelector('.batch-actions');
+            const selectedCountSpan = document.getElementById('selected-count');
+            
+            if (batchActions) {
+                if (selectedCount > 0) {
+                    batchActions.classList.remove('hidden');
+                } else {
+                    batchActions.classList.add('hidden');
+                }
+            }
+            
+            if (selectedCountSpan) {
+                selectedCountSpan.textContent = selectedCount;
+            }
+        };
+
+        // Header search functionality  
+        const initializeHeaderSearch = () => {
+            const searchInput = document.getElementById('header-search');
+            const searchDropdown = document.getElementById('search-dropdown');
+            const searchResults = document.getElementById('search-results');
+            let searchTimeout;
+
+            if (!searchInput || !searchDropdown || !searchResults) return;
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                
+                clearTimeout(searchTimeout);
+                
+                if (query.length < 2) {
+                    searchDropdown.classList.add('hidden');
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    performSearch(query);
+                }, 300);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#header-search') && !e.target.closest('#search-dropdown')) {
+                    searchDropdown.classList.add('hidden');
+                }
+            });
+        };
+
+        // Perform search
+        const performSearch = async (query) => {
+            const searchResults = document.getElementById('search-results');
+            const searchDropdown = document.getElementById('search-dropdown');
+            
+            try {
+                searchResults.innerHTML = '<div class="p-4 text-center text-gray-500">Đang tìm kiếm...</div>';
+                searchDropdown.classList.remove('hidden');
+
+                const response = await friendsAPI.searchUsers(query);
+                const sentRequests = getSentRequests();
+                
+                if (response.users && response.users.length > 0) {
+                    searchResults.innerHTML = response.users.map(user => {
+                        let actionButton = '';
+                        
+                        // Check if we've sent a request to this user (localStorage check)
+                        const hasSentRequest = sentRequests.includes(user._id);
+                        
+                        switch (user.friendshipStatus) {
+                            case 'accepted':
+                                actionButton = '<span class="text-green-600 text-sm font-medium">Đã là bạn</span>';
+                                break;
+                            case 'pending':
+                                if (user.friendshipPerspective === 'sent' || hasSentRequest) {
+                                    actionButton = '<span class="text-gray-500 text-sm">Đã gửi lời mời</span>';
+                                } else {
+                                    actionButton = `<button data-action="accept-friend" data-request-id="${user.friendshipId}" class="text-blue-500 hover:text-blue-700 text-sm font-medium">Chấp nhận</button>`;
+                                }
+                                break;
+                            default:
+                                if (hasSentRequest) {
+                                    actionButton = '<span class="text-gray-500 text-sm">Đã gửi lời mời</span>';
+                                } else {
+                                    actionButton = `<button data-action="send-friend-request" data-user-id="${user._id}" class="text-blue-500 hover:text-blue-700 text-sm font-medium">Thêm bạn</button>`;
+                                }
+                        }
+
+                        return `
+                            <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition" data-action="view-profile" data-user-id="${user._id}">>
+                                <img src="${user.profile?.avatar || 'https://placehold.co/40x40/000000/FFFFFF?text=' + (user.firstName?.charAt(0) || user.email?.charAt(0) || 'U')}" 
+                                     alt="${user.firstName || user.username}" 
+                                     class="w-10 h-10 rounded-full mr-3">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">${user.firstName || ''} ${user.lastName || ''}</div>
+                                    <div class="text-gray-500 text-xs">${user.email}</div>
+                                </div>
+                                <div data-action="stop-propagation">
+                                    ${actionButton}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    searchResults.innerHTML = '<div class="p-4 text-center text-gray-500">Không tìm thấy kết quả</div>';
+                }
+
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="p-4 text-center text-red-500">Lỗi tìm kiếm. Vui lòng thử lại.</div>';
+            }
+        };
+
+        // Setup user menu
+        const setupUserMenu = () => {
+            const userMenuBtn = document.getElementById('user-menu-btn');
+            const userMenu = document.getElementById('user-menu');
+            
+            if (userMenuBtn && userMenu) {
+                userMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    userMenu.classList.toggle('hidden');
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#user-menu-btn') && !e.target.closest('#user-menu')) {
+                        userMenu.classList.add('hidden');
+                    }
+                });
+            }
+        };
+
+        // Update user info in header
+        const updateUserInfo = () => {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || localStorage.getItem('currentUser') || '{}');
+            
+            if (userInfo.firstName || userInfo.username) {
+                const firstName = userInfo.firstName || userInfo.username || 'User';
+                const lastName = userInfo.lastName || '';
+                const email = userInfo.email || '';
+                const fullName = `${firstName} ${lastName}`.trim();
+                const firstLetter = firstName.charAt(0).toUpperCase();
+                const avatarUrl = userInfo.profile?.avatar || userInfo.avatar || `https://placehold.co/48x48/000000/FFFFFF?text=${firstLetter}`;
+                
+                // Update header avatar
+                const userAvatar = document.getElementById('user-avatar');
+                if (userAvatar) {
+                    userAvatar.src = avatarUrl;
+                    userAvatar.alt = fullName;
+                }
+                
+                // Update menu user info
+                const menuUserAvatar = document.getElementById('menu-user-avatar');
+                const menuUserName = document.getElementById('menu-user-name');
+                const menuUserEmail = document.getElementById('menu-user-email');
+                
+                if (menuUserAvatar) {
+                    menuUserAvatar.src = avatarUrl;
+                    menuUserAvatar.alt = fullName;
+                }
+                
+                if (menuUserName) {
+                    menuUserName.textContent = fullName;
+                }
+                
+                if (menuUserEmail) {
+                    menuUserEmail.textContent = email;
+                }
+            }
+        };
+
+        // Navigation functionality
+        document.addEventListener('DOMContentLoaded', async () => {
+            const nav = document.getElementById('friends-nav');
+            const links = nav.querySelectorAll('.sidebar-link');
+            const mainContent = document.querySelector('.w-full');
+            const views = {
+                home: document.getElementById('view-home'),
+                requests: document.getElementById('view-requests'),
+                suggestions: document.getElementById('view-suggestions'),
+                'all-friends': document.getElementById('view-all-friends'),
+                birthdays: document.getElementById('view-birthdays')
+            };
+
+            nav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const link = e.target.closest('.sidebar-link');
+                if (!link) return;
+
+                const viewName = link.dataset.view;
+                if (!viewName) return;
+
+                links.forEach(l => l.classList.remove('active', 'shadow-lg'));
+                link.classList.add('active', 'shadow-lg');
+
+                Object.values(views).forEach(view => {
+                    if (view) view.classList.add('hidden');
+                });
+                if (views[viewName]) {
+                    views[viewName].classList.remove('hidden');
+                }
+            });
+
+            if (mainContent) {
+                mainContent.addEventListener('click', (e) => {
+                    const isOptionsBtn = e.target.closest('.options-btn');
+                    
+                    document.querySelectorAll('.options-menu').forEach(menu => {
+                        if (!isOptionsBtn || !menu.previousElementSibling.isEqualNode(isOptionsBtn)) {
+                            menu.classList.add('hidden', 'opacity-0', 'scale-95');
+                            menu.classList.remove('opacity-100', 'scale-100');
+                        }
+                    });
+
+                    if (isOptionsBtn) {
+                        const menu = isOptionsBtn.nextElementSibling;
+                        const isHidden = menu.classList.toggle('hidden');
+                        if (!isHidden) {
+                            setTimeout(() => {
+                                menu.classList.remove('opacity-0', 'scale-95');
+                                menu.classList.add('opacity-100', 'scale-100');
+                            }, 10);
+                        }
+                    }
+                });
+            }
+
+            // Initialize everything
+            updateUserInfo();
+            setupUserMenu();
+            setupFriendsSearch();
+            setupBatchActions();
+            initializeHeaderSearch();
+            
+            // Load data with loading states
+            showInfo('Đang tải dữ liệu...');
+            
+            try {
+                await Promise.all([
+                    loadFriends(),
+                    loadFriendRequests(),
+                    loadFriendSuggestions(),
+                    loadBirthdays()
+                ]);
+                
+                // Clear loading state after a brief delay
+                setTimeout(() => {
+                    document.querySelectorAll('.toast-notification').forEach(toast => {
+                        if (toast.textContent.includes('Đang tải')) {
+                            toast.remove();
+                        }
+                    });
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                showError('Không thể tải dữ liệu. Vui lòng tải lại trang.');
+            }
+            
+            // Refresh icons
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
+
+            // Setup profile preview modal events
+            const closeModalBtn = document.getElementById('close-preview-modal');
+            const modal = document.getElementById('profile-preview-modal');
+            
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                });
+            }
+
+            // Click outside to close modal
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        modal.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Event delegation for all actions
+            document.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+
+                const action = target.dataset.action;
+                const userId = target.dataset.userId;
+                const requestId = target.dataset.requestId;
+                const userName = target.dataset.userName;
+
+                // Stop propagation for nested actions
+                if (action === 'stop-propagation') {
+                    e.stopPropagation();
+                    return;
+                }
+
+                switch (action) {
+                    case 'accept-friend':
+                        acceptFriendRequest(requestId, target);
+                        break;
+                    case 'reject-friend':
+                        rejectFriendRequest(requestId, target);
+                        break;
+                    case 'send-friend-request':
+                        sendFriendRequest(userId, target);
+                        break;
+                    case 'start-message':
+                        startMessage(userId);
+                        break;
+                    case 'view-profile':
+                        viewProfile(userId);
+                        break;
+                    case 'remove-friend':
+                        removeFriend(userId, userName);
+                        break;
+                    case 'ignore-suggestion':
+                        ignoreSuggestion(userId, target);
+                        break;
+                    case 'batch-accept-selected':
+                        batchAcceptSelected();
+                        break;
+                    case 'batch-reject-selected':
+                        batchRejectSelected();
+                        break;
+                    case 'clear-selection':
+                        clearSelection();
+                        break;
+                    case 'view-my-profile':
+                        viewMyProfile();
+                        break;
+                    case 'show-settings':
+                        showSettings();
+                        break;
+                    case 'logout':
+                        logout();
+                        break;
+                }
+            });
+        });
+
+        // Load notification count
+        async function loadNotificationCount() {
+            try {
+                const response = await fetch('/api/notifications/unread-count', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    const count = data.count || 0;
+                    
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count.toString();
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notification count:', error);
+            }
+        }
+
+        // Load notification count on page load and periodically
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotificationCount();
+            // Reload every 30 seconds
+            setInterval(loadNotificationCount, 30000);
+        });
+    </script>
+
+    <!-- Profile Preview Modal -->
+    <div id="profile-preview-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="relative">
+                <!-- Cover Photo -->
+                <div id="preview-cover" class="h-32 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-t-2xl relative">
+                    <img id="preview-cover-img" class="w-full h-full object-cover rounded-t-2xl hidden" alt="Cover Photo">
+                    <button id="close-preview-modal" class="absolute top-3 right-3 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition">
+                        <i data-lucide="x" class="w-5 h-5 text-gray-700"></i>
+                    </button>
+                </div>
+                
+                <!-- Profile Avatar -->
+                <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
+                    <img id="preview-avatar" src="" alt="Avatar" class="w-24 h-24 rounded-full border-4 border-white shadow-lg">
+                </div>
+            </div>
+            
+            <!-- Profile Info -->
+            <div class="pt-16 px-6 pb-6">
+                <div class="text-center mb-6">
+                    <h3 id="preview-name" class="text-xl font-bold text-gray-900 mb-1"></h3>
+                    <p id="preview-mutual-friends" class="text-sm text-gray-500 mb-4"></p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3 justify-center">
+                        <button id="preview-add-friend-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center">
+                            <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                            Kết bạn
+                        </button>
+                        <button id="preview-message-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center">
+                            <i data-lucide="message-circle" class="w-4 h-4 mr-2"></i>
+                            Nhắn tin
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- About Info -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-900">Giới thiệu</h4>
+                    <div id="preview-about" class="space-y-2 text-sm text-gray-600">
+                        <!-- About info will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- View Full Profile Button -->
+                <button id="preview-view-full-btn" class="w-full mt-6 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-medium transition">
+                    Xem trang cá nhân đầy đủ
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

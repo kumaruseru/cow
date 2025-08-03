@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cow Social - Friends & Search System</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .filter-input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-results {
+            margin-bottom: 30px;
+        }
+
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .user-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .user-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .user-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+        }
+
+        .user-username {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+
+        .status-offline {
+            background: #ccc;
+        }
+
+        .verified-badge {
+            color: #2196F3;
+            font-size: 0.9rem;
+        }
+
+        .user-details {
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .detail-icon {
+            margin-right: 8px;
+            width: 16px;
+        }
+
+        .user-bio {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin: 10px 0;
+            max-height: 60px;
+            overflow: hidden;
+        }
+
+        .user-interests {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .interest-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .friend-requests-section {
+            margin-bottom: 30px;
+        }
+
+        .request-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .request-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .request-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .request-info {
+            flex: 1;
+        }
+
+        .request-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .request-time {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .request-message {
+            color: #555;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .suggestions-section {
+            margin-bottom: 30px;
+        }
+
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .suggestion-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .suggestion-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .suggestion-info {
+            flex: 1;
+        }
+
+        .suggestion-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .suggestion-reasons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .reason-tag {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .suggestion-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .friends-section {
+            margin-bottom: 30px;
+        }
+
+        .friends-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            color: #666;
+        }
+
+        .tab.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .friends-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .friend-item:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+        }
+
+        .friend-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .friend-info {
+            flex: 1;
+        }
+
+        .friend-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .friend-type {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .friend-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .status-indicator-global {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-online {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        .status-offline-global {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .search-filters {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-filters {
+                grid-template-columns: 1fr;
+            }
+            
+            .friends-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👥 Cow Social Friends & Search</h1>
+            <p>Tìm kiếm và kết nối với bạn bè mới</p>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm bạn bè theo tên, email, sở thích...">
+                <div class="search-icon">🔍</div>
+            </div>
+            
+            <div class="search-filters">
+                <div class="filter-group">
+                    <label class="filter-label">Địa điểm</label>
+                    <input type="text" id="locationFilter" class="filter-input" placeholder="VD: Hồ Chí Minh">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Nghề nghiệp</label>
+                    <input type="text" id="occupationFilter" class="filter-input" placeholder="VD: Software Engineer">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Tuổi từ</label>
+                    <input type="number" id="minAgeFilter" class="filter-input" placeholder="18" min="18" max="100">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Tuổi đến</label>
+                    <input type="number" id="maxAgeFilter" class="filter-input" placeholder="65" min="18" max="100">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Sở thích</label>
+                    <input type="text" id="interestsFilter" class="filter-input" placeholder="VD: Programming, Travel">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Trạng thái</label>
+                    <select id="statusFilter" class="filter-input">
+                        <option value="">Tất cả</option>
+                        <option value="online">Đang online</option>
+                        <option value="verified">Đã xác minh</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="search-actions">
+                <button class="btn" onclick="performSearch()">🔍 Tìm kiếm</button>
+                <button class="btn btn-secondary" onclick="clearFilters()">🗑️ Xóa bộ lọc</button>
+                <button class="btn btn-success" onclick="showAdvancedSearch()">⚙️ Tìm kiếm nâng cao</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Search Results -->
+            <div class="search-results card">
+                <h3>🔍 Kết quả tìm kiếm</h3>
+                <div id="searchResults" class="user-grid"></div>
+                <div id="searchLoading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <div>Đang tìm kiếm...</div>
+                </div>
+                <div id="searchEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">🔍</div>
+                    <div>Không tìm thấy kết quả phù hợp</div>
+                    <div>Hãy thử thay đổi từ khóa hoặc bộ lọc</div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <!-- Friend Requests -->
+                <div class="card friend-requests-section">
+                    <h3>📨 Lời mời kết bạn</h3>
+                    <div class="friends-tabs">
+                        <div class="tab active" onclick="showRequests('received')">Nhận được</div>
+                        <div class="tab" onclick="showRequests('sent')">Đã gửi</div>
+                    </div>
+                    <div id="friendRequests"></div>
+                </div>
+
+                <!-- Friend Suggestions -->
+                <div class="card suggestions-section">
+                    <h3>💡 Gợi ý kết bạn</h3>
+                    <div id="friendSuggestions"></div>
+                </div>
+
+                <!-- Friends List -->
+                <div class="card friends-section">
+                    <h3>👫 Danh sách bạn bè</h3>
+                    <div class="friends-tabs">
+                        <div class="tab active" onclick="showFriends('all')">Tất cả</div>
+                        <div class="tab" onclick="showFriends('close_friend')">Bạn thân</div>
+                        <div class="tab" onclick="showFriends('family')">Gia đình</div>
+                    </div>
+                    <div id="friendsList" class="friends-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator-global" id="statusIndicator">
+        <div id="connectionStatus" class="status-offline-global">🔴 Đang kết nối...</div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // Global variables
+        let socket;
+        let currentUser = null;
+        let searchResults = [];
+        let friendRequests = [];
+        let friendSuggestions = [];
+        let friendsList = [];
+        let currentRequestType = 'received';
+        let currentFriendType = 'all';
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            setupEventListeners();
+            authenticateUser();
+        });
+
+        // Socket.IO initialization
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                console.log('Connected to friends system');
+            });
+            
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+            });
+            
+            socket.on('authenticated', (data) => {
+                currentUser = data.userId;
+                console.log('Authenticated as:', data.userId);
+                loadInitialData();
+            });
+            
+            socket.on('new_friend_request', (data) => {
+                showNotification(`${data.fromUser.displayName} đã gửi lời mời kết bạn`, 'success');
+                loadFriendRequests();
+            });
+            
+            socket.on('friend_request_response', (data) => {
+                const actionText = data.action === 'accept' ? 'đã chấp nhận' : 'đã từ chối';
+                showNotification(`${data.user.displayName} ${actionText} lời mời kết bạn của bạn`, 'success');
+                loadFriendRequests();
+                if (data.action === 'accept') {
+                    loadFriends();
+                }
+            });
+            
+            socket.on('user_searching', (data) => {
+                console.log('User is searching:', data);
+            });
+        }
+
+        // User authentication
+        function authenticateUser() {
+            // Demo login with Alice
+            const username = 'alice_nguyen';
+            const password = 'demo123';
+            
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const token = data.data.token;
+                    socket.emit('authenticate', { token });
+                    showNotification('Đăng nhập thành công!', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Auth error:', error);
+                showNotification('Lỗi đăng nhập', 'error');
+            });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(isConnected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (isConnected) {
+                statusElement.textContent = '🟢 Đã kết nối Friends System';
+                statusElement.className = 'status-online';
+            } else {
+                statusElement.textContent = '🔴 Mất kết nối';
+                statusElement.className = 'status-offline-global';
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search input with debounce
+            let searchTimeout;
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (e.target.value.length > 2) {
+                        performSearch();
+                    } else if (e.target.value.length === 0) {
+                        clearSearchResults();
+                    }
+                    
+                    // Emit typing event
+                    if (socket && currentUser) {
+                        socket.emit('typing_search', { query: e.target.value });
+                    }
+                }, 500);
+            });
+
+            // Filter changes
+            const filters = ['locationFilter', 'occupationFilter', 'minAgeFilter', 'maxAgeFilter', 'interestsFilter', 'statusFilter'];
+            filters.forEach(filterId => {
+                document.getElementById(filterId).addEventListener('change', () => {
+                    if (document.getElementById('searchInput').value.length > 0) {
+                        performSearch();
+                    }
+                });
+            });
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            await Promise.all([
+                loadFriendRequests(),
+                loadFriendSuggestions(),
+                loadFriends()
+            ]);
+        }
+
+        // Perform search
+        async function performSearch() {
+            if (!currentUser) return;
+            
+            const query = document.getElementById('searchInput').value;
+            const location = document.getElementById('locationFilter').value;
+            const occupation = document.getElementById('occupationFilter').value;
+            const minAge = document.getElementById('minAgeFilter').value;
+            const maxAge = document.getElementById('maxAgeFilter').value;
+            const interests = document.getElementById('interestsFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            showSearchLoading(true);
+            
+            try {
+                const params = new URLSearchParams({
+                    q: query,
+                    ...(location && { location }),
+                    ...(occupation && { occupation }),
+                    ...(minAge && { minAge }),
+                    ...(maxAge && { maxAge }),
+                    ...(interests && { interests }),
+                    ...(statusFilter === 'online' && { isOnline: 'true' }),
+                    ...(statusFilter === 'verified' && { isVerified: 'true' }),
+                    limit: 20
+                });
+                
+                const response = await fetch(`/api/users/search?${params}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    searchResults = result.data.users;
+                    renderSearchResults();
+                } else {
+                    showNotification('Lỗi tìm kiếm: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi tìm kiếm: ' + error.message, 'error');
+            } finally {
+                showSearchLoading(false);
+            }
+        }
+
+        // Render search results
+        function renderSearchResults() {
+            const container = document.getElementById('searchResults');
+            const emptyState = document.getElementById('searchEmpty');
+            
+            if (searchResults.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+            
+            searchResults.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <div class="user-header">
+                        <img src="${user.avatar}" alt="${user.displayName}" class="user-avatar">
+                        <div class="user-info">
+                            <div class="user-name">${user.displayName}</div>
+                            <div class="user-username">@${user.username}</div>
+                            <div class="user-status">
+                                <div class="status-indicator ${user.isOnline ? '' : 'status-offline'}"></div>
+                                <span>${user.isOnline ? 'Đang online' : 'Offline'}</span>
+                                ${user.isVerified ? '<span class="verified-badge">✓ Đã xác minh</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-details">
+                        <div class="detail-item">
+                            <span class="detail-icon">📍</span>
+                            <span>${user.location}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">💼</span>
+                            <span>${user.occupation}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">🎂</span>
+                            <span>${user.age} tuổi</span>
+                        </div>
+                        ${user.mutualFriends > 0 ? `
+                        <div class="detail-item">
+                            <span class="detail-icon">👥</span>
+                            <span>${user.mutualFriends} bạn chung</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="user-bio">${user.bio}</div>
+                    
+                    <div class="user-interests">
+                        ${user.interests.slice(0, 3).map(interest => 
+                            `<span class="interest-tag">${interest}</span>`
+                        ).join('')}
+                        ${user.interests.length > 3 ? `<span class="interest-tag">+${user.interests.length - 3}</span>` : ''}
+                    </div>
+                    
+                    <div class="user-actions">
+                        <button class="btn btn-small" onclick="sendFriendRequest('${user.id}')">
+                            👋 Kết bạn
+                        </button>
+                        <button class="btn btn-small btn-outline" onclick="viewProfile('${user.id}')">
+                            👀 Xem profile
+                        </button>
+                        <button class="btn btn-small btn-secondary" onclick="sendMessage('${user.id}')">
+                            💬 Nhắn tin
+                        </button>
+                    </div>
+                `;
+                container.appendChild(userCard);
+            });
+        }
+
+        // Load friend requests
+        async function loadFriendRequests() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/friend-requests/${currentUser}?type=${currentRequestType}&status=pending`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    friendRequests = result.data.requests;
+                    renderFriendRequests();
+                }
+            } catch (error) {
+                console.error('Error loading friend requests:', error);
+            }
+        }
+
+        // Render friend requests
+        function renderFriendRequests() {
+            const container = document.getElementById('friendRequests');
+            container.innerHTML = '';
+            
+            if (friendRequests.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📨</div>
+                        <div>Không có lời mời kết bạn nào</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            friendRequests.forEach(request => {
+                const requestItem = document.createElement('div');
+                requestItem.className = 'request-item';
+                requestItem.innerHTML = `
+                    <img src="${request.user.avatar}" alt="${request.user.displayName}" class="request-avatar">
+                    <div class="request-info">
+                        <div class="request-name">${request.user.displayName}</div>
+                        <div class="request-time">${formatTimeAgo(request.createdAt)}</div>
+                        ${request.message ? `<div class="request-message">"${request.message}"</div>` : ''}
+                        ${request.user.mutualFriends > 0 ? `<div style="font-size: 0.8rem; color: #666;">${request.user.mutualFriends} bạn chung</div>` : ''}
+                    </div>
+                    <div class="request-actions">
+                        ${currentRequestType === 'received' ? `
+                            <button class="btn btn-small btn-success" onclick="respondToRequest('${request.id}', 'accept')">
+                                ✓ Chấp nhận
+                            </button>
+                            <button class="btn btn-small btn-secondary" onclick="respondToRequest('${request.id}', 'reject')">
+                                ✗ Từ chối
+                            </button>
+                        ` : `
+                            <button class="btn btn-small btn-secondary" onclick="respondToRequest('${request.id}', 'cancel')">
+                                🗑️ Hủy
+                            </button>
+                        `}
+                    </div>
+                `;
+                container.appendChild(requestItem);
+            });
+        }
+
+        // Load friend suggestions
+        async function loadFriendSuggestions() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/friend-suggestions/${currentUser}?limit=5`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    friendSuggestions = result.data.suggestions;
+                    renderFriendSuggestions();
+                }
+            } catch (error) {
+                console.error('Error loading friend suggestions:', error);
+            }
+        }
+
+        // Render friend suggestions
+        function renderFriendSuggestions() {
+            const container = document.getElementById('friendSuggestions');
+            container.innerHTML = '';
+            
+            if (friendSuggestions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💡</div>
+                        <div>Không có gợi ý kết bạn</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            friendSuggestions.forEach(suggestion => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'suggestion-item';
+                suggestionItem.innerHTML = `
+                    <img src="${suggestion.user.avatar}" alt="${suggestion.user.displayName}" class="suggestion-avatar">
+                    <div class="suggestion-info">
+                        <div class="suggestion-name">${suggestion.user.displayName}</div>
+                        <div style="font-size: 0.8rem; color: #666;">${suggestion.user.location} • ${suggestion.user.occupation}</div>
+                        <div class="suggestion-reasons">
+                            ${suggestion.reasons.map(reason => 
+                                `<span class="reason-tag">${reason}</span>`
+                            ).join('')}
+                        </div>
+                        ${suggestion.mutualFriends > 0 ? `<div style="font-size: 0.8rem; color: #666; margin-top: 3px;">${suggestion.mutualFriends} bạn chung</div>` : ''}
+                    </div>
+                    <div class="suggestion-actions">
+                        <button class="btn btn-small" onclick="sendFriendRequest('${suggestion.user.id}')">
+                            👋 Kết bạn
+                        </button>
+                        <button class="btn btn-small btn-outline" onclick="dismissSuggestion('${suggestion.user.id}')">
+                            ✗ Ẩn
+                        </button>
+                    </div>
+                `;
+                container.appendChild(suggestionItem);
+            });
+        }
+
+        // Load friends
+        async function loadFriends() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/friends/${currentUser}?type=${currentFriendType}&limit=10`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    friendsList = result.data.friends;
+                    renderFriends();
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+            }
+        }
+
+        // Render friends
+        function renderFriends() {
+            const container = document.getElementById('friendsList');
+            container.innerHTML = '';
+            
+            if (friendsList.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">👫</div>
+                        <div>Chưa có bạn bè nào</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            friendsList.forEach(friend => {
+                const friendItem = document.createElement('div');
+                friendItem.className = 'friend-item';
+                friendItem.innerHTML = `
+                    <img src="${friend.avatar}" alt="${friend.displayName}" class="friend-avatar">
+                    <div class="friend-info">
+                        <div class="friend-name">${friend.displayName}</div>
+                        <div class="friend-type">${getFriendTypeText(friend.friendshipType)} • ${formatTimeAgo(friend.friendshipDate)}</div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn btn-small btn-outline" onclick="viewProfile('${friend.id}')">
+                            👀
+                        </button>
+                        <button class="btn btn-small" onclick="sendMessage('${friend.id}')">
+                            💬
+                        </button>
+                    </div>
+                `;
+                container.appendChild(friendItem);
+            });
+        }
+
+        // Send friend request
+        async function sendFriendRequest(toUserId) {
+            if (!currentUser) return;
+            
+            const message = prompt('Tin nhắn kèm theo (tùy chọn):') || '';
+            
+            try {
+                const response = await fetch('/api/friend-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fromUserId: currentUser,
+                        toUserId,
+                        message
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Đã gửi lời mời kết bạn!', 'success');
+                    
+                    // Emit real-time event
+                    socket.emit('friend_request_sent', {
+                        requestId: result.data.id,
+                        toUserId,
+                        fromUser: {
+                            id: currentUser,
+                            displayName: 'Current User' // Would get from user data
+                        },
+                        message
+                    });
+                    
+                } else {
+                    showNotification('Lỗi: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi gửi lời mời: ' + error.message, 'error');
+            }
+        }
+
+        // Respond to friend request
+        async function respondToRequest(requestId, action) {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/friend-requests/${requestId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action,
+                        userId: currentUser
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    loadFriendRequests();
+                    
+                    if (action === 'accept') {
+                        loadFriends();
+                    }
+                    
+                    // Emit real-time event
+                    socket.emit('friend_request_responded', {
+                        requestId,
+                        action,
+                        fromUserId: result.data.fromUserId,
+                        user: {
+                            id: currentUser,
+                            displayName: 'Current User'
+                        }
+                    });
+                    
+                } else {
+                    showNotification('Lỗi: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi phản hồi: ' + error.message, 'error');
+            }
+        }
+
+        // Dismiss suggestion
+        async function dismissSuggestion(suggestionUserId) {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/friend-suggestions/${currentUser}/${suggestionUserId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Đã ẩn gợi ý', 'success');
+                    loadFriendSuggestions();
+                } else {
+                    showNotification('Lỗi: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        // View profile
+        function viewProfile(userId) {
+            showNotification('Tính năng xem profile sẽ sớm có!', 'success');
+        }
+
+        // Send message
+        function sendMessage(userId) {
+            showNotification('Tính năng nhắn tin sẽ sớm có!', 'success');
+        }
+
+        // Show/hide loading
+        function showSearchLoading(show) {
+            document.getElementById('searchLoading').style.display = show ? 'block' : 'none';
+            document.getElementById('searchResults').style.display = show ? 'none' : 'grid';
+        }
+
+        // Clear search results
+        function clearSearchResults() {
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('searchEmpty').style.display = 'none';
+        }
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('locationFilter').value = '';
+            document.getElementById('occupationFilter').value = '';
+            document.getElementById('minAgeFilter').value = '';
+            document.getElementById('maxAgeFilter').value = '';
+            document.getElementById('interestsFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            clearSearchResults();
+        }
+
+        // Show advanced search
+        function showAdvancedSearch() {
+            showNotification('Tính năng tìm kiếm nâng cao sẽ sớm có!', 'success');
+        }
+
+        // Show friend requests by type
+        function showRequests(type) {
+            currentRequestType = type;
+            
+            // Update tab UI
+            document.querySelectorAll('.friend-requests-section .tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            loadFriendRequests();
+        }
+
+        // Show friends by type
+        function showFriends(type) {
+            currentFriendType = type;
+            
+            // Update tab UI
+            document.querySelectorAll('.friends-section .tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            loadFriends();
+        }
+
+        // Helper functions
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            
+            if (diffDays > 0) {
+                return `${diffDays} ngày trước`;
+            } else if (diffHours > 0) {
+                return `${diffHours} giờ trước`;
+            } else if (diffMinutes > 0) {
+                return `${diffMinutes} phút trước`;
+            } else {
+                return 'Vừa xong';
+            }
+        }
+
+        function getFriendTypeText(type) {
+            const typeMap = {
+                friend: 'Bạn bè',
+                close_friend: 'Bạn thân',
+                acquaintance: 'Quen biết',
+                family: 'Gia đình',
+                colleague: 'Đồng nghiệp'
+            };
+            return typeMap[type] || 'Bạn bè';
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (container.contains(notification)) {
+                        container.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

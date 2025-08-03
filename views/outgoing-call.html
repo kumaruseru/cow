@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đang gọi...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Hiệu ứng nền mờ */
+        .background-blur {
+            background-image: url('https://placehold.co/600x800/f87171/ffffff?text=Avatar');
+            filter: blur(20px) brightness(0.7);
+            transform: scale(1.1);
+        }
+
+        /* Hiệu ứng gợn sóng cho avatar */
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 30px rgba(255, 255, 255, 0);
+            }
+        }
+        .avatar-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Hiệu ứng trượt lên cho các nút */
+        @keyframes slide-up {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .slide-up-animation {
+            animation: slide-up 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+        
+        .caller-info {
+             animation-delay: 0.2s;
+        }
+        .action-buttons {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+
+    <!-- Container chính của cuộc gọi đi -->
+    <div id="outgoing-call-screen" class="relative w-full h-screen flex flex-col justify-center items-center text-white overflow-hidden">
+        
+        <!-- Nền mờ -->
+        <div class="background-blur absolute inset-0 w-full h-full bg-cover bg-center z-0"></div>
+        
+        <!-- Lớp phủ tối -->
+        <div class="absolute inset-0 bg-black/50 z-10"></div>
+
+        <!-- Nội dung cuộc gọi -->
+        <div class="relative z-20 flex flex-col items-center justify-between h-full py-16 w-full">
+            
+            <!-- Thông tin người được gọi (phần trên) -->
+            <div class="text-center slide-up-animation caller-info">
+                <div class="relative inline-block">
+                    <img id="callee-avatar" src="https://placehold.co/128x128/f87171/ffffff?text=H" alt="Avatar người được gọi" class="w-32 h-32 rounded-full border-4 border-white/50 object-cover">
+                    <!-- Hiệu ứng gợn sóng -->
+                    <div class="avatar-pulse absolute top-0 left-0 w-32 h-32 rounded-full border-2 border-white/80"></div>
+                </div>
+                <h1 id="callee-name" class="text-4xl font-bold mt-6">Bò Húc</h1>
+                <p id="call-status" class="text-lg text-gray-300 mt-2">Đang gọi...</p>
+            </div>
+
+            <!-- Các nút hành động (phần dưới) -->
+            <div class="w-full px-8 slide-up-animation action-buttons">
+                <div class="flex justify-center items-center">
+                    <!-- Nút Kết thúc cuộc gọi -->
+                    <div class="text-center">
+                        <button id="end-call" class="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform duration-300" title="Kết thúc cuộc gọi">
+                            <i data-lucide="phone-off" class="w-10 h-10 text-white"></i>
+                        </button>
+                        <span class="mt-2 block font-semibold">Kết thúc</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Lấy dữ liệu cuộc gọi từ sessionStorage
+        let callData = {};
+        try {
+            const callDataString = sessionStorage.getItem('currentCallData');
+            if (callDataString) {
+                callData = JSON.parse(callDataString);
+            }
+        } catch (error) {
+            console.error('Error loading call data:', error);
+        }
+
+        // Fallback data nếu không có dữ liệu
+        const callType = callData.callType || 'voice';
+        const contactId = callData.contactId || '';
+        const contactName = callData.contactName || 'Người dùng';
+        const contactAvatar = callData.contactAvatar || '';
+        const callerName = callData.callerName || 'Bạn';
+        const callerAvatar = callData.callerAvatar || '';
+        const isVideoCall = callType === 'video';
+
+        // Biến trạng thái
+        let callStartTime = null;
+        let callTimeout = null;
+
+        // Lấy elements
+        const endCallBtn = document.getElementById('end-call');
+        const callStatus = document.getElementById('call-status');
+        const calleeNameElement = document.getElementById('callee-name');
+        const calleeAvatarElement = document.getElementById('callee-avatar');
+        const backgroundElement = document.querySelector('.background-blur');
+
+        // Cập nhật UI với dữ liệu thật
+        if (calleeNameElement) {
+            calleeNameElement.textContent = contactName;
+        }
+        
+        if (calleeAvatarElement) {
+            if (contactAvatar) {
+                calleeAvatarElement.src = contactAvatar;
+                calleeAvatarElement.alt = contactName;
+            } else {
+                // Fallback avatar với chữ cái đầu
+                const firstLetter = contactName.charAt(0).toUpperCase();
+                calleeAvatarElement.src = `https://placehold.co/160x160/6B7280/FFFFFF?text=${firstLetter}`;
+                calleeAvatarElement.alt = contactName;
+            }
+        }
+        
+        if (backgroundElement) {
+            if (contactAvatar) {
+                backgroundElement.style.backgroundImage = `url('${contactAvatar}')`;
+            } else {
+                // Fallback background
+                const firstLetter = contactName.charAt(0).toUpperCase();
+                backgroundElement.style.backgroundImage = `url('https://placehold.co/600x800/6B7280/FFFFFF?text=${firstLetter}')`;
+            }
+        }
+
+        // Bắt đầu cuộc gọi đi
+        function startOutgoingCall() {
+            callStartTime = new Date();
+            
+            // Cập nhật UI dựa trên loại cuộc gọi và người dùng thật
+            if (isVideoCall) {
+                callStatus.textContent = `Đang gọi video ${contactName}...`;
+                document.title = `Đang gọi video ${contactName}...`;
+            } else {
+                callStatus.textContent = `Đang gọi ${contactName}...`;
+                document.title = `Đang gọi ${contactName}...`;
+            }
+            
+            // Giả lập trạng thái gọi
+            setTimeout(() => {
+                if (isVideoCall) {
+                    callStatus.textContent = `Đang đổ chuông video tới ${contactName}...`;
+                } else {
+                    callStatus.textContent = `Đang đổ chuông tới ${contactName}...`;
+                }
+            }, 1000);
+            
+            // Giả lập timeout sau 30 giây
+            callTimeout = setTimeout(() => {
+                callStatus.textContent = `${contactName} không trả lời`;
+                setTimeout(() => {
+                    endCall();
+                }, 2000);
+            }, 30000);
+            
+            // Giả lập người nhận máy sau 3-8 giây
+            setTimeout(() => {
+                if (callTimeout) {
+                    clearTimeout(callTimeout);
+                    switchToActiveCall();
+                }
+            }, Math.random() * 5000 + 3000); // 3-8 giây random
+        }
+
+        // Chuyển sang trang active call độc lập
+        function switchToActiveCall() {
+            console.log(`Cuộc gọi ${callType} tới ${contactName} đã được kết nối`);
+            
+            // Dừng timeout
+            if (callTimeout) {
+                clearTimeout(callTimeout);
+                callTimeout = null;
+            }
+            
+            // Store active call data for active-call.html
+            const activeCallData = {
+                callType: callType,
+                contactId: contactId,
+                contactName: contactName,
+                contactAvatar: contactAvatar,
+                callerName: callerName,
+                callerAvatar: callerAvatar,
+                callStartTime: callStartTime
+            };
+            sessionStorage.setItem('activeCallData', JSON.stringify(activeCallData));
+            
+            // Chuyển hướng sang trang active-call
+            window.location.href = '/active-call.html';
+        }
+
+        // Xử lý kết thúc cuộc gọi
+        endCallBtn.addEventListener('click', () => {
+            endCall();
+        });
+
+        // Function kết thúc cuộc gọi
+        function endCall() {
+            console.log(`Cuộc gọi ${callType} tới ${contactName} kết thúc`);
+            
+            // Dừng timeout
+            if (callTimeout) {
+                clearTimeout(callTimeout);
+                callTimeout = null;
+            }
+            
+            // Send message to parent window about call end
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'call-ended',
+                    data: { contactId, contactName, callType }
+                }, window.location.origin);
+            }
+            
+            // Clear call data
+            sessionStorage.removeItem('currentCallData');
+            
+            // Đóng trang hiện tại
+            window.close();
+            
+            // Fallback: Nếu không thể đóng cửa sổ, chuyển về messages
+            setTimeout(() => {
+                window.location.href = '/messages.html';
+            }, 100);
+        }
+
+        // Bắt đầu cuộc gọi khi trang load
+        startOutgoingCall();
+    </script>
+</body>
+</html>

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuộc gọi đang diễn ra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Hiệu ứng nền mờ */
+        .background-blur {
+            background-image: url('https://placehold.co/600x800/f87171/ffffff?text=Avatar');
+            filter: blur(20px) brightness(0.7);
+            transform: scale(1.1);
+        }
+
+        /* Fix camera mirror effect - flip local video horizontally */
+        #local-video {
+            transform: scaleX(-1);
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+
+    <!-- Container chính của cuộc gọi voice -->
+    <div id="voice-call-screen" class="relative w-full h-screen flex flex-col justify-center items-center text-white overflow-hidden">
+        
+        <!-- Nền mờ -->
+        <div class="background-blur absolute inset-0 w-full h-full bg-cover bg-center z-0"></div>
+        
+        <!-- Lớp phủ tối -->
+        <div class="absolute inset-0 bg-black/50 z-10"></div>
+
+        <!-- Nội dung cuộc gọi -->
+        <div class="relative z-20 flex flex-col items-center justify-center h-full py-16 w-full">
+            
+            <!-- Thông tin người trong cuộc gọi (phần giữa) -->
+            <div class="text-center">
+                <div class="relative inline-block">
+                    <img id="contact-avatar" src="https://placehold.co/128x128/f87171/ffffff?text=H" alt="Avatar người trong cuộc gọi" class="w-32 h-32 rounded-full border-4 border-white/50 object-cover">
+                </div>
+                <h1 id="contact-name" class="text-4xl font-bold mt-6">Bò Húc</h1>
+                <p id="call-status" class="text-lg text-green-400 mt-2">Đã kết nối</p>
+                <p id="call-timer" class="text-lg text-gray-300 mt-1">00:00</p>
+            </div>
+
+        </div>
+
+        <!-- Các nút điều khiển cuộc gọi ở vị trí cố định dưới -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30">
+            <div class="flex justify-center items-center space-x-6 bg-black/50 backdrop-blur-sm rounded-full px-6 py-4">
+                <!-- Nút Tắt tiếng -->
+                <button id="mute-btn" class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center transform hover:scale-110 transition-all duration-300" title="Tắt/Bật tiếng">
+                    <i data-lucide="mic" class="w-6 h-6 text-white"></i>
+                </button>
+                
+                <!-- Nút Kết thúc cuộc gọi -->
+                <button id="end-call" class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform duration-300" title="Kết thúc cuộc gọi">
+                    <i data-lucide="phone-off" class="w-8 h-8 text-white"></i>
+                </button>
+
+                <!-- Nút Camera (chuyển sang video call) -->
+                <button id="camera-btn" class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center transform hover:scale-110 transition-all duration-300" title="Bật camera">
+                    <i data-lucide="video-off" class="w-6 h-6 text-white"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container video call -->
+    <div id="video-call-screen" class="relative w-full h-screen bg-black text-white overflow-hidden hidden">
+        
+        <!-- Remote video (toàn màn hình) -->
+        <video id="remote-video" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
+        
+        <!-- Local video (picture-in-picture) -->
+        <div class="absolute top-4 right-4 w-32 h-40 bg-gray-800 rounded-lg overflow-hidden border-2 border-white/20">
+            <video id="local-video" class="w-full h-full object-cover" autoplay muted playsinline></video>
+        </div>
+
+        <!-- Call info overlay -->
+        <div class="absolute top-4 left-4 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
+            <p id="video-contact-name" class="text-lg font-semibold">Bò Húc</p>
+            <p id="video-call-timer" class="text-sm text-gray-300">00:00</p>
+        </div>
+
+        <!-- Video call controls -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+            <div class="flex justify-center items-center space-x-6 bg-black/50 backdrop-blur-sm rounded-full px-6 py-4">
+                <!-- Nút Tắt tiếng video -->
+                <button id="video-mute-btn" class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center transform hover:scale-110 transition-all duration-300" title="Tắt/Bật tiếng">
+                    <i data-lucide="mic" class="w-6 h-6 text-white"></i>
+                </button>
+                
+                <!-- Nút Kết thúc video call -->
+                <button id="video-end-call" class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform duration-300" title="Kết thúc cuộc gọi">
+                    <i data-lucide="phone-off" class="w-8 h-8 text-white"></i>
+                </button>
+
+                <!-- Nút Tắt camera (chuyển về voice) -->
+                <button id="video-camera-btn" class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center transform hover:scale-110 transition-all duration-300" title="Tắt camera">
+                    <i data-lucide="video" class="w-6 h-6 text-white"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Lấy dữ liệu cuộc gọi từ sessionStorage
+        let callData = {};
+        try {
+            const callDataString = sessionStorage.getItem('activeCallData');
+            if (callDataString) {
+                callData = JSON.parse(callDataString);
+            }
+        } catch (error) {
+            console.error('Error loading active call data:', error);
+        }
+
+        // Fallback data nếu không có dữ liệu
+        const callType = callData.callType || 'voice';
+        const contactId = callData.contactId || '';
+        const contactName = callData.contactName || 'Người dùng';
+        const contactAvatar = callData.contactAvatar || '';
+        const callerName = callData.callerName || 'Bạn';
+        const callerAvatar = callData.callerAvatar || '';
+        const callStartTime = callData.callStartTime ? new Date(callData.callStartTime) : new Date();
+        const isInitialVideoCall = callType === 'video';
+
+        // Biến trạng thái
+        let isCallActive = false;
+        let callTimerInterval = null;
+        let localStream = null;
+        let isMuted = false;
+        let isVideoMode = false;
+
+        // Lấy elements
+        const voiceCallScreen = document.getElementById('voice-call-screen');
+        const videoCallScreen = document.getElementById('video-call-screen');
+        const endCallBtn = document.getElementById('end-call');
+        const videoEndCallBtn = document.getElementById('video-end-call');
+        const muteBtn = document.getElementById('mute-btn');
+        const videoMuteBtn = document.getElementById('video-mute-btn');
+        const cameraBtn = document.getElementById('camera-btn');
+        const videoCameraBtn = document.getElementById('video-camera-btn');
+        const callTimer = document.getElementById('call-timer');
+        const videoCallTimer = document.getElementById('video-call-timer');
+        const callStatus = document.getElementById('call-status');
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        const contactNameElement = document.getElementById('contact-name');
+        const contactAvatarElement = document.getElementById('contact-avatar');
+        const backgroundElement = document.querySelector('.background-blur');
+
+        // Cập nhật UI với dữ liệu thật
+        function updateUIWithRealData() {
+            // Cập nhật tên người trong cuộc gọi
+            if (contactNameElement) {
+                contactNameElement.textContent = contactName;
+            }
+            
+            // Cập nhật tất cả elements tên trong video call
+            const videoContactName = document.getElementById('video-contact-name');
+            if (videoContactName) {
+                videoContactName.textContent = contactName;
+            }
+            
+            // Cập nhật avatar
+            if (contactAvatarElement) {
+                if (contactAvatar) {
+                    contactAvatarElement.src = contactAvatar;
+                    contactAvatarElement.alt = contactName;
+                } else {
+                    // Fallback avatar với chữ cái đầu
+                    const firstLetter = contactName.charAt(0).toUpperCase();
+                    contactAvatarElement.src = `https://placehold.co/128x128/6B7280/FFFFFF?text=${firstLetter}`;
+                    contactAvatarElement.alt = contactName;
+                }
+            }
+            
+            // Cập nhật background blur
+            if (backgroundElement) {
+                if (contactAvatar) {
+                    backgroundElement.style.backgroundImage = `url('${contactAvatar}')`;
+                } else {
+                    // Fallback background
+                    const firstLetter = contactName.charAt(0).toUpperCase();
+                    backgroundElement.style.backgroundImage = `url('https://placehold.co/600x800/6B7280/FFFFFF?text=${firstLetter}')`;
+                }
+            }
+            
+            // Cập nhật title
+            if (isInitialVideoCall) {
+                document.title = `Video call với ${contactName}`;
+            } else {
+                document.title = `Cuộc gọi với ${contactName}`;
+            }
+        }
+
+        // Bắt đầu cuộc gọi active
+        function startActiveCall() {
+            isCallActive = true;
+            
+            // Cập nhật UI với dữ liệu thật
+            updateUIWithRealData();
+            
+            callStatus.textContent = `Đã kết nối với ${contactName}`;
+            
+            // Bắt đầu timer
+            startCallTimer();
+            
+            // Kiểm tra loại cuộc gọi và bắt đầu phù hợp
+            if (isInitialVideoCall) {
+                // Bắt đầu với video call nếu được gọi từ video call
+                startWithVideoCall();
+            } else {
+                // Bắt đầu với voice call mặc định
+                startVoiceCall();
+            }
+        }
+
+        // Bắt đầu với video call (cho video call từ đầu)
+        async function startWithVideoCall() {
+            try {
+                // Kiểm tra permission trước khi request
+                const permissions = await navigator.permissions.query({name: 'camera'});
+                console.log('Camera permission status:', permissions.state);
+                
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    }
+                });
+
+                // Hiển thị local video
+                localVideo.srcObject = localStream;
+
+                // Giả lập remote video (có thể thay bằng video thật từ WebRTC peer)
+                simulateRemoteVideo();
+
+                // Chuyển sang video mode ngay lập tức
+                voiceCallScreen.classList.add('hidden');
+                videoCallScreen.classList.remove('hidden');
+                isVideoMode = true;
+
+                console.log('Video call started successfully');
+            } catch (error) {
+                console.error('Lỗi khi truy cập camera/microphone:', error);
+                
+                // Xử lý các loại lỗi khác nhau
+                if (error.name === 'NotAllowedError') {
+                    console.log('User denied camera access, falling back to voice call');
+                    callStatus.textContent = 'Không có quyền camera - Voice call';
+                } else if (error.name === 'NotFoundError') {
+                    console.log('No camera found, falling back to voice call');
+                    callStatus.textContent = 'Không tìm thấy camera - Voice call';
+                } else {
+                    console.log('Camera error, falling back to voice call');
+                    callStatus.textContent = 'Lỗi camera - Voice call';
+                }
+                
+                // Fallback về voice call nếu không thể truy cập camera
+                startVoiceCall();
+            }
+        }
+
+        // Giả lập remote video
+        function simulateRemoteVideo() {
+            // Tạo một video element ảo với placeholder
+            const remoteVideo = document.getElementById('remote-video');
+            remoteVideo.style.backgroundImage = 'url(https://placehold.co/640x480/3b82f6/ffffff?text=Remote+Video)';
+            remoteVideo.style.backgroundSize = 'cover';
+            remoteVideo.style.backgroundPosition = 'center';
+        }
+
+        // Kiểm tra permissions một cách proactive
+        async function checkMediaPermissions() {
+            try {
+                // Kiểm tra camera permission nếu browser hỗ trợ
+                if ('permissions' in navigator) {
+                    const cameraPermission = await navigator.permissions.query({name: 'camera'});
+                    const micPermission = await navigator.permissions.query({name: 'microphone'});
+                    
+                    console.log('Camera permission:', cameraPermission.state);
+                    console.log('Microphone permission:', micPermission.state);
+                    
+                    return {
+                        camera: cameraPermission.state,
+                        microphone: micPermission.state
+                    };
+                }
+            } catch (error) {
+                console.log('Permission check not supported:', error);
+            }
+            return null;
+        }
+
+        // Bắt đầu voice call
+        async function startVoiceCall() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: false 
+                });
+                console.log('Microphone connected successfully');
+            } catch (error) {
+                console.error('Lỗi khi truy cập microphone:', error);
+                callStatus.textContent = 'Lỗi microphone';
+            }
+        }
+
+        // Chuyển sang video call
+        async function switchToVideoCall() {
+            try {
+                // Dừng stream hiện tại
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                // Yêu cầu quyền camera và microphone với settings tối ưu
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    }
+                });
+
+                // Hiển thị local video
+                localVideo.srcObject = localStream;
+
+                // Giả lập remote video
+                simulateRemoteVideo();
+
+                // Chuyển giao diện
+                voiceCallScreen.classList.add('hidden');
+                videoCallScreen.classList.remove('hidden');
+                isVideoMode = true;
+
+                // Cập nhật nút camera
+                const icon = cameraBtn.querySelector('i');
+                icon.setAttribute('data-lucide', 'video');
+                cameraBtn.classList.remove('bg-gray-700');
+                cameraBtn.classList.add('bg-blue-600');
+                lucide.createIcons();
+
+                console.log('Switched to video call successfully');
+            } catch (error) {
+                console.error('Lỗi khi bật camera:', error);
+                
+                // Xử lý lỗi một cách mượt mà - không hiển thị alert popup
+                if (error.name === 'NotAllowedError') {
+                    console.log('User denied camera access');
+                } else if (error.name === 'NotFoundError') {
+                    console.log('No camera found');
+                } else {
+                    console.log('Camera error');
+                }
+                
+                // Tiếp tục với voice call, không làm gián đoạn UX
+            }
+        }
+
+        // Chuyển về voice call
+        async function switchToVoiceCall() {
+            try {
+                // Dừng stream hiện tại
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                // Chỉ yêu cầu microphone
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: false 
+                });
+
+                // Chuyển giao diện
+                videoCallScreen.classList.add('hidden');
+                voiceCallScreen.classList.remove('hidden');
+                isVideoMode = false;
+
+                // Cập nhật nút camera
+                const icon = cameraBtn.querySelector('i');
+                icon.setAttribute('data-lucide', 'video-off');
+                cameraBtn.classList.remove('bg-blue-600');
+                cameraBtn.classList.add('bg-gray-700');
+                lucide.createIcons();
+
+                console.log('Switched to voice call successfully');
+            } catch (error) {
+                console.error('Lỗi khi tắt camera:', error);
+            }
+        }
+
+        // Toggle mute
+        function toggleMute() {
+            if (!localStream) return;
+
+            const audioTracks = localStream.getAudioTracks();
+            if (audioTracks.length > 0) {
+                isMuted = !isMuted;
+                audioTracks[0].enabled = !isMuted;
+
+                // Cập nhật UI cho voice call
+                const voiceIcon = muteBtn.querySelector('i');
+                
+                // Cập nhật UI cho video call
+                const videoIcon = videoMuteBtn.querySelector('i');
+
+                if (isMuted) {
+                    voiceIcon.setAttribute('data-lucide', 'mic-off');
+                    videoIcon.setAttribute('data-lucide', 'mic-off');
+                    muteBtn.classList.remove('bg-gray-700');
+                    muteBtn.classList.add('bg-red-500');
+                    videoMuteBtn.classList.remove('bg-gray-700');
+                    videoMuteBtn.classList.add('bg-red-500');
+                } else {
+                    voiceIcon.setAttribute('data-lucide', 'mic');
+                    videoIcon.setAttribute('data-lucide', 'mic');
+                    muteBtn.classList.remove('bg-red-500');
+                    muteBtn.classList.add('bg-gray-700');
+                    videoMuteBtn.classList.remove('bg-red-500');
+                    videoMuteBtn.classList.add('bg-gray-700');
+                }
+
+                lucide.createIcons();
+            }
+        }
+
+        // Event listeners
+        endCallBtn.addEventListener('click', endCall);
+        videoEndCallBtn.addEventListener('click', endCall);
+        muteBtn.addEventListener('click', toggleMute);
+        videoMuteBtn.addEventListener('click', toggleMute);
+        cameraBtn.addEventListener('click', switchToVideoCall);
+        videoCameraBtn.addEventListener('click', switchToVoiceCall);
+
+        // Function bắt đầu timer
+        function startCallTimer() {
+            callStartTime = new Date();
+            callTimerInterval = setInterval(updateCallTimer, 1000);
+        }
+
+        // Function cập nhật timer
+        function updateCallTimer() {
+            if (!callStartTime) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - callStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            callTimer.textContent = timeString;
+            videoCallTimer.textContent = timeString;
+        }
+
+        // Function kết thúc cuộc gọi
+        function endCall() {
+            console.log(`Cuộc gọi ${callType} với ${userName} kết thúc`);
+            
+            // Dừng timer
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+            
+            // Dừng media stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                localStream = null;
+            }
+            
+            // Reset trạng thái
+            isCallActive = false;
+            
+            // Đóng trang hiện tại
+            window.close();
+            
+            // Fallback: Nếu không thể đóng cửa sổ, chuyển về messages
+            setTimeout(() => {
+                window.location.href = '/messages.html';
+            }, 100);
+        }
+
+        // Bắt đầu cuộc gọi khi trang load
+        startActiveCall();
+
+        // Xử lý khi đóng trang
+        window.addEventListener('beforeunload', () => {
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
