@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test LocalStorage</title>
+</head>
+<body>
+    <h1>Test LocalStorage Data</h1>
+    <div id="results"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const results = document.getElementById('results');
+            
+            // Hiển thị tất cả localStorage items
+            let html = '<h2>All localStorage items:</h2>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                html += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            
+            // Kiểm tra userInfo cụ thể
+            const userInfoStr = localStorage.getItem('userInfo');
+            html += '<h2>UserInfo Details:</h2>';
+            if (userInfoStr) {
+                try {
+                    const userInfo = JSON.parse(userInfoStr);
+                    html += `<p><strong>Raw:</strong> ${userInfoStr}</p>`;
+                    html += `<p><strong>Parsed:</strong> ${JSON.stringify(userInfo, null, 2)}</p>`;
+                    html += `<p><strong>firstName:</strong> ${userInfo.firstName}</p>`;
+                    html += `<p><strong>lastName:</strong> ${userInfo.lastName}</p>`;
+                    html += `<p><strong>Full name:</strong> ${userInfo.firstName || ''} ${userInfo.lastName || ''}</p>`;
+                } catch (error) {
+                    html += `<p style="color: red;"><strong>Error parsing:</strong> ${error.message}</p>`;
+                }
+            } else {
+                html += '<p style="color: red;">No userInfo found in localStorage</p>';
+            }
+            
+            results.innerHTML = html;
+        });
+    </script>
+</body>
+</html>

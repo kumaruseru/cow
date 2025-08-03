@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 // Import User model
-const User = require('./models/User');
+const User = require('../models/SimpleUser');
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -30,16 +31,28 @@ const createUser = async (userData) => {
       return;
     }
 
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(userData.password, saltRounds);
+    
+    // Create user data with proper schema
+    const userToCreate = {
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      passwordHash: passwordHash,
+      bio: `Hello, I'm ${userData.firstName}!`,
+      verified: false
+    };
+
     // Create new user
-    const newUser = await User.create(userData);
+    const newUser = await User.create(userToCreate);
     console.log('✅ User created successfully:');
     console.log('   ID:', newUser._id);
-    console.log('   Username:', newUser.username);
     console.log('   Email:', newUser.email);
-    console.log('   Name:', newUser.profile.firstName, newUser.profile.lastName);
-    console.log('   Birth Date:', newUser.birthDate);
-    console.log('   Gender:', newUser.gender);
-    console.log('   Role:', newUser.role);
+    console.log('   Name:', newUser.firstName, newUser.lastName);
+    console.log('   Join Date:', newUser.joinDate);
+    console.log('   Verified:', newUser.verified);
     
   } catch (error) {
     console.error('❌ Error creating user:', error.message);
@@ -51,63 +64,31 @@ const createUser = async (userData) => {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-if (args.length < 6) {
-  console.log('Usage: node create-user.js <firstName> <lastName> <email> <day> <month> <year> <gender> <password>');
-  console.log('Example: node create-user.js "Nguyen" "Van A" "test@example.com" "15" "8" "1995" "male" "123456"');
+if (args.length < 4) {
+  console.log('Usage: node create-user.js <firstName> <lastName> <email> <password>');
+  console.log('Example: node create-user.js "Test" "User" "test@example.com" "123456"');
   process.exit(1);
 }
 
-const [firstName, lastName, email, day, month, year, gender, password] = args;
+const [firstName, lastName, email, password] = args;
 
 // Validate input
-if (!firstName || !lastName || !email || !day || !month || !year || !gender || !password) {
+if (!firstName || !lastName || !email || !password) {
   console.error('❌ All fields are required');
   process.exit(1);
 }
 
-// Validate date
-const dayNum = parseInt(day);
-const monthNum = parseInt(month);
-const yearNum = parseInt(year);
-
-if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > new Date().getFullYear()) {
-  console.error('❌ Invalid date values');
-  process.exit(1);
-}
-
-// Validate gender
-if (!['male', 'female', 'other'].includes(gender)) {
-  console.error('❌ Gender must be: male, female, or other');
-  process.exit(1);
-}
-
-// Create username from firstName and lastName
-const username = (firstName + lastName).toLowerCase().replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
-
-// Format birth date
-const birthDate = new Date(yearNum, monthNum - 1, dayNum);
-
 // User data object
 const userData = {
-  username,
+  firstName,
+  lastName,
   email,
-  password,
-  birthDate,
-  gender,
-  profile: {
-    firstName,
-    lastName
-  },
-  role: 'user',
-  verified: false
+  password
 };
 
 console.log('🚀 Creating user with data:');
-console.log('   Username:', username);
 console.log('   Email:', email);
 console.log('   Name:', firstName, lastName);
-console.log('   Birth Date:', birthDate.toDateString());
-console.log('   Gender:', gender);
 console.log('');
 
 // Create the user

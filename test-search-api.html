@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Search API - Cow Social</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Test Search API</h1>
+        
+        <!-- Login First -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">1. Login First</h2>
+            <div class="mb-4">
+                <input type="email" id="login-email" placeholder="Email" value="33nghia2003@gmail.com" 
+                       class="w-full p-2 border rounded mb-2">
+                <input type="password" id="login-password" placeholder="Password" value="123456" 
+                       class="w-full p-2 border rounded mb-2">
+                <button id="login-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Login
+                </button>
+            </div>
+            <div id="login-status" class="text-sm"></div>
+        </div>
+
+        <!-- Test Search -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">2. Test Search</h2>
+            <div class="mb-4">
+                <input type="text" id="search-input" placeholder="Search query (e.g., huong, nghia)" 
+                       class="w-full p-2 border rounded mb-2">
+                <button id="search-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Search Users
+                </button>
+            </div>
+            <div id="search-results" class="text-sm"></div>
+        </div>
+
+        <!-- Debug Log -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">3. Debug Log</h2>
+            <div id="debug-log" class="bg-gray-100 p-4 rounded text-xs font-mono max-h-96 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        let debugLog = [];
+        let token = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            debugLog.push(logEntry);
+            console.log(logEntry);
+            
+            const logElement = document.getElementById('debug-log');
+            logElement.innerHTML = debugLog.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Login functionality
+        document.getElementById('login-btn').addEventListener('click', async function() {
+            try {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                log(`Attempting login with email: ${email}`);
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.token) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    log('Login successful, token saved');
+                    document.getElementById('login-status').innerHTML = '✅ Login successful';
+                    document.getElementById('login-status').className = 'text-sm text-green-600';
+                } else {
+                    log(`Login failed: ${data.error || 'Unknown error'}`);
+                    document.getElementById('login-status').innerHTML = '❌ Login failed: ' + (data.error || 'Unknown error');
+                    document.getElementById('login-status').className = 'text-sm text-red-600';
+                }
+            } catch (error) {
+                log(`Login error: ${error.message}`, 'error');
+                document.getElementById('login-status').innerHTML = '❌ Login error: ' + error.message;
+                document.getElementById('login-status').className = 'text-sm text-red-600';
+            }
+        });
+
+        // Search functionality
+        document.getElementById('search-btn').addEventListener('click', async function() {
+            try {
+                const query = document.getElementById('search-input').value.trim();
+                
+                if (!query) {
+                    log('Empty search query', 'warning');
+                    return;
+                }
+                
+                if (!token) {
+                    token = localStorage.getItem('token');
+                    if (!token) {
+                        log('No token found, please login first', 'error');
+                        document.getElementById('search-results').innerHTML = '❌ Please login first';
+                        document.getElementById('search-results').className = 'text-sm text-red-600';
+                        return;
+                    }
+                }
+                
+                log(`Searching for: "${query}"`);
+                
+                const response = await fetch(`/api/friends/search?q=${encodeURIComponent(query)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                log(`Search response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Search response: ${JSON.stringify(data, null, 2)}`);
+                    
+                    if (data.success) {
+                        const resultsHtml = `
+                            <div class="space-y-2">
+                                <div class="font-semibold text-green-600">✅ Search successful</div>
+                                <div>Query: "${data.query}"</div>
+                                <div>Found: ${data.count} users</div>
+                                <div class="mt-4">
+                                    <h3 class="font-semibold mb-2">Results:</h3>
+                                    ${data.users.map(user => `
+                                        <div class="border p-2 rounded mb-2">
+                                            <div class="font-medium">${user.name}</div>
+                                            <div class="text-sm text-gray-600">${user.email}</div>
+                                            ${user.username ? `<div class="text-sm text-gray-500">@${user.username}</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.getElementById('search-results').innerHTML = resultsHtml;
+                        document.getElementById('search-results').className = 'text-sm';
+                    } else {
+                        log(`Search failed: ${data.error || 'Unknown error'}`, 'error');
+                        document.getElementById('search-results').innerHTML = '❌ Search failed: ' + (data.error || 'Unknown error');
+                        document.getElementById('search-results').className = 'text-sm text-red-600';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    log(`Search API error: ${JSON.stringify(errorData)}`, 'error');
+                    document.getElementById('search-results').innerHTML = '❌ Search API error: ' + (errorData.error || response.status);
+                    document.getElementById('search-results').className = 'text-sm text-red-600';
+                }
+            } catch (error) {
+                log(`Search error: ${error.message}`, 'error');
+                document.getElementById('search-results').innerHTML = '❌ Search error: ' + error.message;
+                document.getElementById('search-results').className = 'text-sm text-red-600';
+            }
+        });
+
+        // Initialize
+        log('Search test page loaded');
+        token = localStorage.getItem('token');
+        if (token) {
+            log('Found existing token in localStorage');
+            document.getElementById('login-status').innerHTML = '✅ Token found in localStorage';
+            document.getElementById('login-status').className = 'text-sm text-green-600';
+        }
+    </script>
+</body>
+</html>

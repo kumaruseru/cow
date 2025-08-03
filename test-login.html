@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 class="text-2xl font-bold mb-6 text-center">Test Login</h2>
+        
+        <div class="space-y-4">
+            <button onclick="loginUser('john@example.com', '123456')" 
+                    class="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600">
+                Login as John Doe
+            </button>
+            
+            <button onclick="loginUser('jane@example.com', '123456')" 
+                    class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600">
+                Login as Jane Smith
+            </button>
+        </div>
+        
+        <div id="result" class="mt-4"></div>
+    </div>
+
+    <script>
+        async function loginUser(email, password) {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('userId', result.user._id);
+                    localStorage.setItem('userName', result.user.firstName + ' ' + result.user.lastName);
+                    
+                    document.getElementById('result').innerHTML = 
+                        `<div class="text-green-600">Đăng nhập thành công! Chuyển hướng...</div>`;
+                    
+                    setTimeout(() => {
+                        window.location.href = '/messages.html';
+                    }, 1000);
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `<div class="text-red-600">Lỗi: ${result.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<div class="text-red-600">Lỗi: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

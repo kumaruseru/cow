@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            overflow-x: hidden;
+            visibility: hidden; /* Ẩn body cho đến khi kiểm tra xong */
+        }
+        
+        /* Chỉ hiển thị khi đã đăng nhập */
+        body.authenticated {
+            visibility: visible;
+        }
+        
+        /* --- TÙY CHỈNH THANH CUỘN --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c4c4c4;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* Hiệu ứng cho nút like */
+        .like-button.liked svg {
+            fill: #ef4444;
+            stroke: #ef4444;
+        }
+
+        /* Active tab style */
+        .profile-tab.active {
+            border-bottom-color: #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .profile-tab:hover {
+            color: #374151;
+        }
+
+        .about-link.active {
+            background-color: #f3f4f6;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        /* Cover photo gradient overlay */
+        .cover-overlay {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* Custom scrollbar for navigation */
+        .nav-scroll::-webkit-scrollbar {
+            height: 2px;
+        }
+        
+        .nav-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .nav-scroll::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+
+        /* Transition cho modal */
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal > div {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header chính -->
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="relative flex items-center justify-between h-16 px-4">
+            <!-- Cột Trái: Logo và Thanh tìm kiếm -->
+            <div class="flex items-center space-x-2">
+                <div class="flex-shrink-0">
+                    <a href="/" class="block" title="Về trang chủ">
+                        <svg class="w-10 h-10 text-black hover:text-gray-700 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-5H8v-2h8v2z"/><path d="M19.36 8.64C18.48 7.52 17.3 6.66 16 6.18V4.05c1.73.64 3.22 1.76 4.36 3.14l-1 1.45zM4.64 8.64l-1-1.45C4.78 5.81 6.27 4.69 8 4.05v2.13c-1.3.48-2.48 1.34-3.36 2.46z"/><path d="M12 18c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4z" opacity=".5"/></svg>
+                    </a>
+                </div>
+                <div class="relative hidden lg:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                    </span>
+                    <input 
+                        id="header-search" 
+                        type="search" 
+                        placeholder="Tìm kiếm bạn bè..." 
+                        class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border-transparent focus:bg-white focus:border-gray-300 focus:ring-black/50 transition"
+                        autocomplete="off"
+                    >
+                    <!-- Dropdown kết quả tìm kiếm -->
+                    <div id="search-dropdown" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50 hidden">
+                        <div id="search-results" class="p-2">
+                            <!-- Kết quả tìm kiếm sẽ được hiển thị ở đây -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Cột Giữa: Navigation Icons (định vị tuyệt đối) -->
+            <nav class="hidden md:flex items-center justify-center space-x-2 absolute left-1/2 -translate-x-1/2">
+                <a href="/" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang chủ"><i data-lucide="home" class="w-6 h-6"></i></a>
+                <a href="/messages" class="p-3 rounded-full hover:bg-gray-100 transition" title="Tin nhắn"><i data-lucide="message-square" class="w-6 h-6"></i></a>
+                <a href="/notifications" class="p-3 rounded-full hover:bg-gray-100 transition relative" title="Thông báo">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </a>
+                <a href="/friends" class="p-3 rounded-full hover:bg-gray-100 transition" title="Bạn bè"><i data-lucide="users" class="w-6 h-6"></i></a>
+                <a href="/profile" class="p-3 rounded-full bg-gray-200 transition" title="Profile"><i data-lucide="user" class="w-6 h-6"></i></a>
+            </nav>
+            <!-- Cột Phải: User Profile -->
+            <div class="flex items-center space-x-3">
+                <!-- Nội dung đã được xóa -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Profile Content -->
+    <main class="max-w-7xl mx-auto">
+        <!-- Profile Header -->
+        <div id="profile-header-view" class="bg-white shadow-sm">
+            <!-- Cover Photo -->
+            <div class="relative h-80 md:h-96 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 overflow-hidden group">
+                <img id="cover-photo" class="w-full h-full object-cover hidden" alt="Cover Photo">
+                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                
+                <!-- Cover Photo Controls -->
+                <div class="absolute bottom-4 right-4 flex space-x-2">
+                    <button id="edit-cover-btn" class="bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-800 px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                        <span>Chỉnh sửa ảnh bìa</span>
+                    </button>
+                    <button id="remove-cover-btn" class="hidden bg-red-500 bg-opacity-90 hover:bg-opacity-100 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Xóa</span>
+                    </button>
+                </div>
+                
+                <!-- Upload Options Popup -->
+                <div id="cover-upload-popup" class="hidden absolute bottom-16 right-4 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-48">
+                    <button id="upload-cover-btn" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3">
+                        <i data-lucide="upload" class="w-4 h-4 text-gray-600"></i>
+                        <span>Tải ảnh lên</span>
+                    </button>
+                    <button id="select-cover-btn" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3">
+                        <i data-lucide="image" class="w-4 h-4 text-gray-600"></i>
+                        <span>Chọn ảnh có sẵn</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Hidden file inputs -->
+            <input type="file" id="cover-file-input" accept="image/*" class="hidden">
+            <input type="file" id="avatar-file-input" accept="image/*" class="hidden">
+            
+            <!-- Profile Info Container -->
+            <div class="relative">
+                <!-- Profile Info -->
+                <div class="px-4 md:px-6 pb-4">
+                    <div class="flex flex-col md:flex-row items-start md:items-end -mt-14 md:-mt-16">
+                        <!-- Avatar -->
+                        <div class="relative mb-4 md:mb-0 group">
+                            <img id="profile-avatar" src="https://placehold.co/168x168/000000/FFFFFF?text=B" alt="User Avatar" class="w-40 h-40 md:w-42 md:h-42 rounded-full border-4 border-white shadow-lg bg-white">
+                            <div class="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                                <i data-lucide="camera" class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>
+                            </div>
+                            <button id="edit-avatar-btn" class="absolute bottom-2 right-2 bg-gray-100 hover:bg-gray-200 rounded-full p-2 shadow-md transition">
+                                <i data-lucide="camera" class="w-5 h-5 text-gray-600"></i>
+                            </button>
+                            
+                            <!-- Avatar Upload Options Popup -->
+                            <div id="avatar-upload-popup" class="hidden absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-48 z-10">
+                                <button id="upload-avatar-btn" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3">
+                                    <i data-lucide="upload" class="w-4 h-4 text-gray-600"></i>
+                                    <span>Tải ảnh lên</span>
+                                </button>
+                                <button id="view-avatar-btn" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3">
+                                    <i data-lucide="eye" class="w-4 h-4 text-gray-600"></i>
+                                    <span>Xem ảnh đại diện</span>
+                                </button>
+                                <hr class="my-1">
+                                <button id="remove-avatar-btn" class="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600 flex items-center space-x-3">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <span>Xóa ảnh đại diện</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Name and Info -->
+                        <div class="md:ml-6 flex-grow min-w-0">
+                            <h1 id="profile-name" class="text-3xl md:text-4xl font-bold text-gray-900 mb-2"></h1>
+                            <p id="friends-count" class="text-gray-600 font-medium mb-4">0 bạn bè</p>
+                            
+                            <!-- Mutual Friends Preview -->
+                            <div id="mutual-friends" class="hidden flex items-center space-x-2 mb-4">
+                                <div class="flex -space-x-2">
+                                    <!-- Avatar placeholders for mutual friends -->
+                                </div>
+                                <span class="text-sm text-gray-600">Có 5 bạn chung</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex items-center space-x-3 mt-4 md:mt-0">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">
+                                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                                Thêm tin
+                            </button>
+                            <button id="edit-profile-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-semibold transition">
+                                <i data-lucide="edit-3" class="w-4 h-4 inline mr-2"></i>
+                                Chỉnh sửa trang cá nhân
+                            </button>
+                            <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg transition">
+                                <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Navigation -->
+                <nav id="profile-nav" class="border-t border-gray-200">
+                    <div class="px-4 md:px-6">
+                        <div class="flex space-x-8 overflow-x-auto">
+                            <a href="#" data-view="posts" class="profile-tab active py-4 text-gray-600 border-b-2 border-blue-600 font-semibold whitespace-nowrap">Bài viết</a>
+                            <a href="#" data-view="about" class="profile-tab py-4 text-gray-500 border-b-2 border-transparent hover:border-gray-300 font-medium whitespace-nowrap transition">Giới thiệu</a>
+                            <a href="#" data-view="friends" class="profile-tab py-4 text-gray-500 border-b-2 border-transparent hover:border-gray-300 font-medium whitespace-nowrap transition">Bạn bè</a>
+                            <a href="#" data-view="photos" class="profile-tab py-4 text-gray-500 border-b-2 border-transparent hover:border-gray-300 font-medium whitespace-nowrap transition">Ảnh</a>
+                            <a href="#" data-view="videos" class="profile-tab py-4 text-gray-500 border-b-2 border-transparent hover:border-gray-300 font-medium whitespace-nowrap transition">Video</a>
+                            <a href="#" data-view="more" class="profile-tab py-4 text-gray-500 border-b-2 border-transparent hover:border-gray-300 font-medium whitespace-nowrap transition">Xem thêm</a>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <!-- View: Bài viết -->
+        <div id="view-posts" class="mt-6 px-4 md:px-6">
+            <div class="grid grid-cols-12 gap-6 max-w-7xl mx-auto">
+                <!-- Left Sidebar -->
+                <div class="col-span-12 lg:col-span-5 space-y-4">
+                    <!-- About Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="font-bold text-xl mb-4">Giới thiệu</h3>
+                        <div id="about-info" class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="map-pin" class="w-5 h-5 text-gray-500"></i>
+                                <span>Sống tại <span id="user-location" class="font-medium">Nông trại Vui vẻ</span></span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="calendar" class="w-5 h-5 text-gray-500"></i>
+                                <span id="join-date">Tham gia vào tháng 8, 2025</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="heart" class="w-5 h-5 text-gray-500"></i>
+                                <span>Độc thân</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="clock" class="w-5 h-5 text-gray-500"></i>
+                                <span>Hoạt động 2 giờ trước</span>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-medium transition">
+                            Chỉnh sửa chi tiết
+                        </button>
+                    </div>
+
+                    <!-- Photos Preview Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-xl">Ảnh</h3>
+                            <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">Xem tất cả ảnh</a>
+                        </div>
+                        <div class="text-center py-8">
+                            <i data-lucide="image" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+                            <p class="text-gray-500">Chưa có ảnh nào</p>
+                            <p class="text-gray-400 text-sm mt-1">Những ảnh bạn đăng sẽ xuất hiện ở đây</p>
+                        </div>
+                    </div>
+
+                    <!-- Friends Preview Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-xl">Bạn bè</h3>
+                                <p id="friends-preview-count" class="text-gray-500">0 bạn bè</p>
+                            </div>
+                            <a href="#" data-view="friends" class="profile-tab-trigger text-blue-600 hover:text-blue-700 font-medium">Xem tất cả bạn bè</a>
+                        </div>
+                        <div id="friends-preview-content">
+                            <!-- Friends preview will be loaded here -->
+                            <div id="friends-preview-loading" class="text-center py-8">
+                                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                <p class="text-gray-500 mt-2">Đang tải...</p>
+                            </div>
+                            <div id="friends-preview-empty" class="hidden text-center py-8">
+                                <i data-lucide="users" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+                                <p class="text-gray-500">Chưa có bạn bè</p>
+                                <p class="text-gray-400 text-sm mt-1">Khi bạn kết bạn với mọi người, họ sẽ xuất hiện ở đây</p>
+                            </div>
+                            <div id="friends-preview-grid" class="hidden grid grid-cols-3 gap-3">
+                                <!-- Friends grid will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Content -->
+                <div class="col-span-12 lg:col-span-7 space-y-4">
+                    <!-- Create Post Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <img id="profile-post-user-avatar" src="https://placehold.co/48x48/000000/FFFFFF?text=B" alt="User Avatar" class="w-10 h-10 rounded-full">
+                            <div id="profile-post-placeholder" class="flex-grow bg-gray-100 hover:bg-gray-200 text-gray-500 px-4 py-3 rounded-full cursor-pointer transition">
+                                Bạn đang nghĩ gì?
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 pt-3">
+                            <div class="grid grid-cols-3 gap-1">
+                                <button class="flex items-center justify-center space-x-2 text-gray-600 hover:bg-gray-100 py-2 rounded-lg transition">
+                                    <i data-lucide="video" class="w-5 h-5 text-red-500"></i>
+                                    <span class="font-medium text-sm">Video trực tiếp</span>
+                                </button>
+                                <button class="flex items-center justify-center space-x-2 text-gray-600 hover:bg-gray-100 py-2 rounded-lg transition">
+                                    <i data-lucide="image" class="w-5 h-5 text-green-500"></i>
+                                    <span class="font-medium text-sm">Ảnh/video</span>
+                                </button>
+                                <button class="flex items-center justify-center space-x-2 text-gray-600 hover:bg-gray-100 py-2 rounded-lg transition">
+                                    <i data-lucide="smile" class="w-5 h-5 text-yellow-500"></i>
+                                    <span class="font-medium text-sm">Cảm xúc</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Posts Content -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div class="text-center py-12">
+                            <i data-lucide="file-text" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                            <h4 class="text-xl font-semibold text-gray-500 mb-2">Chưa có bài viết nào</h4>
+                            <p class="text-gray-400 mb-4">Khi bạn đăng bài viết, chúng sẽ xuất hiện trên dòng thời gian của bạn.</p>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                                Tạo bài viết đầu tiên
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- View: Giới thiệu -->
+        <div id="view-about" class="hidden mt-8">
+            <div class="grid grid-cols-12 gap-8">
+                <!-- Left Column (About Nav) -->
+                <div class="col-span-12 lg:col-span-4">
+                    <div class="bg-white p-4 rounded-lg shadow sticky top-24">
+                        <h3 class="font-bold text-xl mb-4">Giới thiệu</h3>
+                        <nav id="about-nav" class="space-y-1">
+                           <a href="#" data-about-view="overview" class="about-link active flex items-center px-4 py-2 rounded-lg">Tổng quan</a>
+                           <a href="#" data-about-view="work" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Công việc và học vấn</a>
+                           <a href="#" data-about-view="places" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Nơi từng sống</a>
+                           <a href="#" data-about-view="contact" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Thông tin liên hệ và cơ bản</a>
+                           <a href="#" data-about-view="family" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Gia đình và các mối quan hệ</a>
+                           <a href="#" data-about-view="details" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Chi tiết về bạn</a>
+                           <a href="#" data-about-view="events" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Sự kiện trong đời</a>
+                        </nav>
+                    </div>
+                </div>
+                <!-- Right Column (About Content) -->
+                <div class="col-span-12 lg:col-span-8">
+                    <div id="about-overview" class="about-content-view bg-white p-6 rounded-lg shadow space-y-6">
+                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="briefcase" class="w-6 h-6 text-gray-500"></i><span>Thêm nơi làm việc</span></a>
+                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="graduation-cap" class="w-6 h-6 text-gray-500"></i><span>Thêm trường học</span></a>
+                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="home" class="w-6 h-6 text-gray-500"></i><span>Thêm tỉnh/thành phố hiện tại</span></a>
+                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="map-pin" class="w-6 h-6 text-gray-500"></i><span>Thêm quê quán</span></a>
+                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="heart" class="w-6 h-6 text-gray-500"></i><span>Thêm tình trạng mối quan hệ</span></a>
+                    </div>
+                    <div id="about-work" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Công việc và học vấn</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm nơi làm việc</span></a><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm trường học</span></a></div>
+                    <div id="about-places" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Nơi từng sống</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm nơi ở</span></a></div>
+                    <div id="about-contact" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Thông tin liên hệ và cơ bản</h3><p>Nội dung thông tin liên hệ.</p></div>
+                    <div id="about-family" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Gia đình và các mối quan hệ</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm thành viên</span></a></div>
+                    <div id="about-details" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Chi tiết về bạn</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm thông tin</span></a></div>
+                    <div id="about-events" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Sự kiện trong đời</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm sự kiện</span></a></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- View: Bạn bè -->
+        <div id="view-friends" class="hidden mt-6 px-4 md:px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="font-bold text-2xl">Bạn bè</h3>
+                            <p id="friends-full-count" class="text-gray-500 mt-1">0 bạn bè</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="window.location.href='/friends.html'" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition">
+                                Tìm bạn bè
+                            </button>
+                            <button onclick="window.location.href='/friends.html#friend-requests'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                                Lời mời kết bạn
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="friends-full-loading" class="text-center py-16">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <p class="text-gray-500 mt-4">Đang tải danh sách bạn bè...</p>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="friends-full-empty" class="hidden text-center py-16">
+                        <i data-lucide="users" class="w-20 h-20 text-gray-300 mx-auto mb-4"></i>
+                        <h4 class="text-xl font-semibold text-gray-500 mb-2">Chưa có bạn bè</h4>
+                        <p class="text-gray-400 mb-6 max-w-md mx-auto">Khi bạn kết bạn với mọi người, họ sẽ xuất hiện ở đây. Tìm kiếm bạn bè để bắt đầu kết nối!</p>
+                        <button onclick="window.location.href='/friends.html'" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
+                            Tìm bạn bè
+                        </button>
+                    </div>
+                    
+                    <!-- Friends Grid -->
+                    <div id="friends-full-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        <!-- Friends will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Ảnh -->
+        <div id="view-photos" class="hidden mt-6 px-4 md:px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-2xl">Ảnh</h3>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                            Thêm ảnh
+                        </button>
+                    </div>
+                    <div class="text-center py-16">
+                        <i data-lucide="image" class="w-20 h-20 text-gray-300 mx-auto mb-4"></i>
+                        <h4 class="text-xl font-semibold text-gray-500 mb-2">Chưa có ảnh nào</h4>
+                        <p class="text-gray-400 mb-6 max-w-md mx-auto">Những ảnh bạn đăng sẽ xuất hiện ở đây. Hãy chia sẻ những khoảnh khắc đẹp nhất của bạn!</p>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
+                            Thêm ảnh đầu tiên
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Video -->
+        <div id="view-videos" class="hidden mt-6 px-4 md:px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-2xl">Video</h3>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                            Thêm video
+                        </button>
+                    </div>
+                    <div class="text-center py-16">
+                        <i data-lucide="video" class="w-20 h-20 text-gray-300 mx-auto mb-4"></i>
+                        <h4 class="text-xl font-semibold text-gray-500 mb-2">Chưa có video nào</h4>
+                        <p class="text-gray-400 mb-6 max-w-md mx-auto">Những video bạn đăng sẽ xuất hiện ở đây. Hãy chia sẻ những video thú vị của bạn!</p>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
+                            Thêm video đầu tiên
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    
+    <!-- Modal Chỉnh sửa hồ sơ -->
+    <div id="edit-profile-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl transform scale-95">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-bold">Chỉnh sửa trang cá nhân</h2>
+                <button id="close-modal-btn" class="p-2 rounded-full hover:bg-gray-100 transition" title="Đóng">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                <!-- Chỉnh sửa ảnh -->
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg">Ảnh đại diện</h3>
+                        <button class="text-blue-600 font-semibold hover:underline">Thêm</button>
+                    </div>
+                    <div class="flex justify-center">
+                        <img src="https://placehold.co/128x128/000000/FFFFFF?text=B" alt="User Avatar" class="w-32 h-32 rounded-full">
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg">Ảnh bìa</h3>
+                        <button class="text-blue-600 font-semibold hover:underline">Thêm</button>
+                    </div>
+                    <div class="flex justify-center">
+                         <img src="https://placehold.co/400x150/A5D6A7/333333?text=Ảnh+bìa" alt="Cover photo" class="w-full h-auto rounded-lg">
+                    </div>
+                </div>
+                <hr>
+                <!-- Chỉnh sửa thông tin -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">Chỉnh sửa phần giới thiệu</h3>
+                        <button id="add-details-btn" class="text-blue-600 font-semibold hover:underline">Thêm</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3 text-gray-700"><i data-lucide="home" class="w-5 h-5"></i><span>Tỉnh/Thành phố hiện tại: <span class="font-semibold">Thảo nguyên Mênh mông</span></span></div>
+                        <div class="flex items-center space-x-3 text-gray-700"><i data-lucide="briefcase" class="w-5 h-5"></i><span>Nơi làm việc: <span class="font-semibold">Nông trại Vui vẻ</span></span></div>
+                        <div class="flex items-center space-x-3 text-gray-700"><i data-lucide="graduation-cap" class="w-5 h-5"></i><span>Trường học: <span class="font-semibold">Học viện Đồng cỏ Xanh</span></span></div>
+                        <div class="flex items-center space-x-3 text-gray-700"><i data-lucide="map-pin" class="w-5 h-5"></i><span>Quê quán: <span class="font-semibold">Đồng cỏ Ngút ngàn</span></span></div>
+                        <div class="flex items-center space-x-3 text-gray-700"><i data-lucide="heart" class="w-5 h-5"></i><span>Tình trạng mối quan hệ: <span class="font-semibold">Độc thân vui tính</span></span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 p-4 bg-gray-50 rounded-b-lg">
+                <button id="cancel-edit-btn-modal" class="px-6 py-2 bg-gray-200 font-bold rounded-lg hover:bg-gray-300 transition">Hủy</button>
+                <button class="px-6 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition">Lưu</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Chỉnh sửa chi tiết -->
+    <div id="edit-details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg transform scale-95">
+            <div class="relative flex justify-center items-center p-4 border-b">
+                <h2 class="text-xl font-bold text-center">Chỉnh sửa chi tiết</h2>
+                <button id="close-details-modal-btn" class="absolute right-4 p-2 rounded-full hover:bg-gray-100 transition" title="Đóng">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                 <p class="text-sm text-gray-600">Thông tin bạn chọn sẽ ở chế độ Công khai và hiển thị ở đầu trang cá nhân của bạn.</p>
+                 <div class="space-y-6">
+                    <div>
+                        <h3 class="font-semibold mb-2">Danh xưng</h3>
+                        <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm danh xưng</span></a>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Công việc</h3>
+                        <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm nơi làm việc</span></a>
+                    </div>
+                     <div>
+                        <h3 class="font-semibold mb-2">Học vấn</h3>
+                        <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm trường trung học</span></a>
+                        <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline mt-2"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm trường cao đẳng/đại học</span></a>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Tỉnh/Thành phố hiện tại</h3>
+                         <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm thành phố</span></a>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Quê quán</h3>
+                        <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm quê quán</span></a>
+                    </div>
+                     <div>
+                        <h3 class="font-semibold mb-2">Mối quan hệ</h3>
+                        <a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm tình trạng mối quan hệ</span></a>
+                    </div>
+                 </div>
+            </div>
+             <div class="flex justify-end space-x-3 p-4 bg-gray-50 rounded-b-lg">
+                <button id="cancel-details-modal-btn" class="px-6 py-2 bg-gray-200 font-bold rounded-lg hover:bg-gray-300 transition">Hủy</button>
+                <button class="px-6 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tạo bài viết -->
+    <div id="create-post-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center" style="background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800">Tạo bài viết</h2>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-4">
+                <!-- User Info -->
+                <div class="flex items-center space-x-3 mb-4">
+                    <img id="modal-user-avatar" src="https://placehold.co/48x48/000000/FFFFFF?text=B" alt="User Avatar" class="w-12 h-12 rounded-full">
+                    <div>
+                        <h3 id="modal-user-name" class="font-semibold text-gray-800">Nghia Trong</h3>
+                        <select class="text-sm text-gray-600 bg-gray-100 rounded px-2 py-1" title="Quyền riêng tư">
+                            <option>🌐 Công khai</option>
+                            <option>👥 Bạn bè</option>
+                            <option>🔒 Chỉ mình tôi</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Post Content -->
+                <textarea id="modal-post-content" class="w-full p-3 border-0 resize-none text-lg placeholder-gray-500 focus:outline-none" 
+                    placeholder="Bạn đang nghĩ gì?" rows="6"></textarea>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-between mt-4 p-3 border border-gray-200 rounded-lg">
+                    <span class="text-sm font-semibold text-gray-700">Thêm vào bài viết của bạn</span>
+                    <div class="flex items-center space-x-2">
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Ảnh/Video">
+                            <i data-lucide="image" class="w-6 h-6 text-green-500"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Gắn thẻ bạn bè">
+                            <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Cảm xúc">
+                            <i data-lucide="smile" class="w-6 h-6 text-yellow-500"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Vị trí">
+                            <i data-lucide="map-pin" class="w-6 h-6 text-red-500"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="GIF">
+                            <span class="text-sm font-bold text-purple-500">GIF</span>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Thêm">
+                            <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Post Button -->
+                <button id="modal-post-btn" class="w-full mt-4 py-3 bg-gray-300 text-gray-500 font-bold rounded-lg cursor-not-allowed transition" disabled>
+                    Đăng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Kiểm tra token và initialize trang
+        async function initializePage() {
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            
+            if (!token) {
+                window.location.replace('/login.html');
+                return;
+            }
+            
+            // Hiển thị trang trước khi load profile
+            document.body.classList.add('authenticated');
+            
+            // Kiểm tra xem có yêu cầu xem profile của user khác không
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewUserId = urlParams.get('user');
+            
+            try {
+                if (viewUserId && viewUserId !== 'undefined') {
+                    // Load profile của user khác
+                    await loadUserProfile(viewUserId);
+                } else {
+                    // Load profile của chính mình từ localStorage
+                    const storedUserInfo = localStorage.getItem('userInfo');
+                    console.log('🔍 Raw userInfo from localStorage:', storedUserInfo);
+                    
+                    if (storedUserInfo) {
+                        try {
+                            const userInfo = JSON.parse(storedUserInfo);
+                            console.log('👤 Parsed user info:', userInfo);
+                            updateProfileInfo(userInfo);
+                            loadFriendsData();
+                        } catch (parseError) {
+                            console.error('Error parsing userInfo from localStorage:', parseError);
+                            localStorage.removeItem('userInfo');
+                            window.location.replace('/login.html');
+                        }
+                    } else {
+                        console.log('No userInfo in localStorage, redirecting to login');
+                        window.location.replace('/login.html');
+                    }
+                }
+            } catch (error) {
+                console.error('Initialize page error:', error);
+                if (!viewUserId) {
+                    window.location.replace('/login.html');
+                }
+            }
+        }
+        
+        // Function để cập nhật thông tin profile
+        function updateProfileInfo(userInfo) {
+            console.log('� updateProfileInfo called with:', userInfo);
+            
+            try {
+                // Cập nhật tên trong header
+                const profileTitle = document.getElementById('profile-name');
+                if (profileTitle) {
+                    const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim();
+                    profileTitle.textContent = fullName || userInfo.email || 'User';
+                }
+
+                // Cập nhật avatar
+                const avatarImg = document.getElementById('profile-avatar');
+                if (avatarImg && userInfo.firstName) {
+                    const firstLetter = userInfo.firstName.charAt(0).toUpperCase();
+                    avatarImg.src = `https://placehold.co/168x168/3B82F6/FFFFFF?text=${firstLetter}`;
+                    avatarImg.alt = `Avatar của ${userInfo.firstName}`;
+                }
+
+                // Cập nhật thông tin cơ bản
+                const emailElement = document.getElementById('profile-email');
+                if (emailElement) {
+                    emailElement.textContent = userInfo.email || 'N/A';
+                }
+                
+                console.log('✅ Profile info updated successfully');
+                
+            } catch (error) {
+                console.error('❌ Error updating profile info:', error);
+            }
+        }
+
+        // Load user profile from server
+        async function loadUserProfile(userId = null) {
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+                if (!token) {
+                    window.location.replace('/login.html');
+                    return;
+                }
+
+                const url = userId ? `/api/profile/${userId}` : '/api/profile';
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const userInfo = data.user || data;
+                    console.log('Profile data received:', userInfo);
+                    
+                    updateProfileInfo(userInfo);
+                    
+                    // Show different UI for other users' profiles
+                    if (userId) {
+                        setupOtherUserProfile(userInfo, userId);
+                    } else {
+                        setupOwnProfile();
+                        loadFriendsData();
+                    }
+                } else {
+                    console.error('Failed to load user profile:', response.status);
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('userInfo');
+                        window.location.replace('/login.html');
+                    } else if (userId) {
+                        alert('Không thể tải profile của người dùng này.');
+                        window.location.href = '/profile.html';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                if (userId) {
+                    alert('Có lỗi xảy ra khi tải profile.');
+                    window.location.href = '/profile.html';
+                }
+            }
+        }
+
+        function setupOtherUserProfile(userInfo, userId) {
+            console.log('Setting up other user profile for:', userInfo);
+            
+            // Hide create post section
+            const createPostSection = document.querySelector('#profile-post-placeholder')?.closest('.bg-white');
+            if (createPostSection) {
+                createPostSection.style.display = 'none';
+            }
+            
+            // Hide edit buttons
+            const editButtons = document.querySelectorAll('#edit-profile-btn, #edit-cover-btn, #edit-avatar-btn');
+            editButtons.forEach(btn => {
+                if (btn) btn.style.display = 'none';
+            });
+            
+            // Show friend action buttons
+            const actionButtonsContainer = document.querySelector('#edit-profile-btn')?.parentElement;
+            if (actionButtonsContainer) {
+                // Check if we've already sent a friend request
+                const sentRequests = JSON.parse(localStorage.getItem('sentFriendRequests') || '[]');
+                const hasSentRequest = sentRequests.includes(userId);
+                
+                let friendButtonHtml = '';
+                if (hasSentRequest) {
+                    friendButtonHtml = `
+                        <button id="add-friend-btn" class="bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold cursor-not-allowed" disabled>
+                            <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
+                            Đã gửi lời mời
+                        </button>
+                    `;
+                } else {
+                    friendButtonHtml = `
+                        <button id="add-friend-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">
+                            <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>
+                            Kết bạn
+                        </button>
+                    `;
+                }
+                
+                actionButtonsContainer.innerHTML = `
+                    ${friendButtonHtml}
+                    <button id="message-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold transition">
+                        <i data-lucide="message-circle" class="w-5 h-5 mr-2"></i>
+                        Nhắn tin
+                    </button>
+                `;
+                
+                // Recreate icons
+                lucide.createIcons();
+                
+                // Add event listeners
+                setupFriendActionButtons(userId, hasSentRequest);
+            }
+        }
+
+        function setupOwnProfile() {
+            // Show create post section
+            const createPostSection = document.querySelector('#profile-post-placeholder')?.closest('.bg-white');
+            if (createPostSection) {
+                createPostSection.style.display = 'block';
+            }
+            
+            // Show edit buttons
+            const editButtons = document.querySelectorAll('#edit-profile-btn, #edit-cover-btn, #edit-avatar-btn');
+            editButtons.forEach(btn => {
+                if (btn) btn.style.display = 'block';
+            });
+        }
+
+        function setupFriendActionButtons(userId, hasSentRequest) {
+            const addFriendBtn = document.getElementById('add-friend-btn');
+            const messageBtn = document.getElementById('message-btn');
+            
+            if (addFriendBtn && !hasSentRequest) {
+                addFriendBtn.addEventListener('click', async () => {
+                    try {
+                        const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                        if (!token) {
+                            alert('Vui lòng đăng nhập để kết bạn');
+                            return;
+                        }
+                        
+                        // Change button state immediately
+                        addFriendBtn.disabled = true;
+                        addFriendBtn.innerHTML = `
+                            <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
+                            Đang gửi...
+                        `;
+                        addFriendBtn.className = "bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold cursor-not-allowed";
+                        lucide.createIcons();
+                        
+                        // Send friend request
+                        const response = await fetch('/api/friend-request', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ targetUserId: userId })
+                        });
+                        
+                        if (response.ok) {
+                            addFriendBtn.innerHTML = `
+                                <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
+                                Đã gửi lời mời
+                            `;
+                            lucide.createIcons();
+                            
+                            // Store sent request
+                            const sentRequests = JSON.parse(localStorage.getItem('sentFriendRequests') || '[]');
+                            if (!sentRequests.includes(userId)) {
+                                sentRequests.push(userId);
+                                localStorage.setItem('sentFriendRequests', JSON.stringify(sentRequests));
+                            }
+                            
+                            // Show success message
+                            showNotification('Đã gửi lời mời kết bạn!', 'success');
+                        } else {
+                            throw new Error('Failed to send friend request');
+                        }
+                    } catch (error) {
+                        console.error('Error sending friend request:', error);
+                        // Reset button
+                        addFriendBtn.disabled = false;
+                        addFriendBtn.innerHTML = `
+                            <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>
+                            Kết bạn
+                        `;
+                        addFriendBtn.className = "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition";
+                        lucide.createIcons();
+                        showNotification('Có lỗi xảy ra khi gửi lời mời kết bạn', 'error');
+                    }
+                });
+            }
+            
+            if (messageBtn) {
+                messageBtn.addEventListener('click', () => {
+                    window.location.href = `/messages?user=${userId}`;
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 text-white ${
+                type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Friends functionality
+        async function loadFriendsData() {
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+                if (!token) return;
+
+                const response = await fetch('/api/friends', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.friends) {
+                        displayFriendsPreview(data.friends);
+                        displayFriendsFull(data.friends);
+                        updateFriendsCount(data.friends.length);
+                    } else {
+                        showEmptyFriendsState();
+                    }
+                } else {
+                    showEmptyFriendsState();
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+                showEmptyFriendsState();
+            }
+        }
+
+        function displayFriendsPreview(friends) {
+            const previewGrid = document.getElementById('friends-preview-grid');
+            const previewLoading = document.getElementById('friends-preview-loading');
+            const previewEmpty = document.getElementById('friends-preview-empty');
+            
+            if (previewLoading) previewLoading.classList.add('hidden');
+            
+            if (!friends || friends.length === 0) {
+                if (previewEmpty) previewEmpty.classList.remove('hidden');
+                if (previewGrid) previewGrid.classList.add('hidden');
+                return;
+            }
+
+            if (previewEmpty) previewEmpty.classList.add('hidden');
+            if (previewGrid) {
+                previewGrid.classList.remove('hidden');
+                previewGrid.innerHTML = '';
+
+                const friendsToShow = friends.slice(0, 9);
+                friendsToShow.forEach((friend) => {
+                    const displayName = friend.name || `${friend.firstName || ''} ${friend.lastName || ''}`.trim() || friend.username || 'User';
+                    const friendId = friend.id || friend._id;
+                    const avatarUrl = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+                    
+                    const friendElement = document.createElement('div');
+                    friendElement.className = 'text-center';
+                    friendElement.innerHTML = `
+                        <div class="relative group cursor-pointer" onclick="window.location.href='/profile?user=${friendId}'">
+                            <img src="${avatarUrl}" 
+                                 alt="${displayName}" 
+                                 class="w-20 h-20 rounded-lg object-cover mx-auto mb-2 group-hover:opacity-80 transition">
+                            <p class="text-sm font-medium text-gray-900 truncate">${displayName}</p>
+                        </div>
+                    `;
+                    previewGrid.appendChild(friendElement);
+                });
+            }
+        }
+        
+        function displayFriendsFull(friends) {
+            const fullGrid = document.getElementById('friends-full-grid');
+            const fullLoading = document.getElementById('friends-full-loading');
+            const fullEmpty = document.getElementById('friends-full-empty');
+            
+            if (fullLoading) fullLoading.classList.add('hidden');
+            
+            if (!friends || friends.length === 0) {
+                if (fullEmpty) fullEmpty.classList.remove('hidden');
+                if (fullGrid) fullGrid.classList.add('hidden');
+                return;
+            }
+
+            if (fullEmpty) fullEmpty.classList.add('hidden');
+            if (fullGrid) {
+                fullGrid.classList.remove('hidden');
+                fullGrid.innerHTML = '';
+
+                friends.forEach((friend) => {
+                    const displayName = friend.name || `${friend.firstName || ''} ${friend.lastName || ''}`.trim() || friend.username || 'User';
+                    const friendId = friend.id || friend._id;
+                    const avatarUrl = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+                    
+                    const friendElement = document.createElement('div');
+                    friendElement.className = 'bg-white rounded-xl p-4 text-center hover:shadow-md transition cursor-pointer';
+                    friendElement.onclick = () => window.location.href = `/profile?user=${friendId}`;
+                    
+                    friendElement.innerHTML = `
+                        <img src="${avatarUrl}" 
+                             alt="${displayName}" 
+                             class="w-16 h-16 rounded-full mx-auto mb-3">
+                        <h4 class="font-semibold text-gray-900 truncate">${displayName}</h4>
+                        <p class="text-sm text-gray-500">Bạn bè</p>
+                    `;
+                    
+                    fullGrid.appendChild(friendElement);
+                });
+            }
+        }
+
+        function updateFriendsCount(count) {
+            const friendsCount = document.getElementById('friends-count');
+            const friendsPreviewCount = document.getElementById('friends-preview-count'); 
+            const friendsFullCount = document.getElementById('friends-full-count');
+            
+            const countText = `${count} bạn bè`;
+            if (friendsCount) friendsCount.textContent = countText;
+            if (friendsPreviewCount) friendsPreviewCount.textContent = countText;
+            if (friendsFullCount) friendsFullCount.textContent = countText;
+        }
+
+        function showEmptyFriendsState() {
+            const previewEmpty = document.getElementById('friends-preview-empty');
+            const fullEmpty = document.getElementById('friends-full-empty');
+            const previewGrid = document.getElementById('friends-preview-grid');
+            const fullGrid = document.getElementById('friends-full-grid');
+            
+            if (previewEmpty) previewEmpty.classList.remove('hidden');
+            if (fullEmpty) fullEmpty.classList.remove('hidden');
+            if (previewGrid) previewGrid.classList.add('hidden');
+            if (fullGrid) fullGrid.classList.add('hidden');
+            
+            updateFriendsCount(0);
+        }
+
+        // Đợi DOM load xong rồi mới initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 DOM loaded, starting initialization...');
+            initializePage();
+            initializeSearch();
+        });
+        
+        // Search functionality
+        function initializeSearch() {
+            const searchInput = document.getElementById('header-search');
+            const searchDropdown = document.getElementById('search-dropdown');
+            const searchResults = document.getElementById('search-results');
+
+            if (!searchInput || !searchDropdown || !searchResults) {
+                console.log('Search elements not found');
+                return;
+            }
+
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                clearTimeout(searchTimeout);
+                
+                if (query.length < 2) {
+                    searchDropdown.classList.add('hidden');
+                    return;
+                }
+
+                searchTimeout = setTimeout(async () => {
+                    await performSearch(query);
+                }, 300);
+            });
+
+            searchInput.addEventListener('focus', function() {
+                if (this.value.trim().length >= 2) {
+                    searchDropdown.classList.remove('hidden');
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                    searchDropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        async function performSearch(query) {
+            const searchResults = document.getElementById('search-results');
+            const searchDropdown = document.getElementById('search-dropdown');
+            
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch(`/api/friends/search?q=${encodeURIComponent(query)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displaySearchResults(data.users || []);
+                    searchDropdown.classList.remove('hidden');
+                } else {
+                    console.error('Search failed:', response.status);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        function displaySearchResults(users) {
+            const searchResults = document.getElementById('search-results');
+            
+            if (users.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="p-4 text-center text-gray-500">
+                        <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
+                        <p>Không tìm thấy kết quả</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const resultsHTML = users.map(user => {
+                const userId = user.id || user._id;
+                const displayName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                const avatarUrl = user.avatar || user.profile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+                
+                // Không hiển thị action button (xóa nút kết bạn)
+                return `
+                    <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors user-profile-link" data-user-id="${userId}">
+                        <img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full mr-3">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900">${displayName}</p>
+                            <p class="text-sm text-gray-500">${user.email}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            searchResults.innerHTML = resultsHTML;
+            
+            // Xóa tất cả event listeners cũ
+            const newSearchResults = searchResults.cloneNode(true);
+            searchResults.parentNode.replaceChild(newSearchResults, searchResults);
+            
+            // Thêm event listener một lần cho tất cả items
+            newSearchResults.addEventListener('click', function(e) {
+                const profileLink = e.target.closest('.user-profile-link');
+                if (profileLink) {
+                    const userId = profileLink.getAttribute('data-user-id');
+                    if (userId) {
+                        navigateToProfile(userId);
+                    }
+                }
+            });
+            
+            lucide.createIcons();
+        }
+
+        // Send friend request from header search
+        window.sendFriendRequestFromHeader = async (userId) => {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                
+                const response = await fetch('/api/friends/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ recipientId: userId })
+                });
+
+                if (response.ok) {
+                    // Update UI - change button to "Đã gửi"
+                    event.target.textContent = 'Đã gửi';
+                    event.target.disabled = true;
+                    event.target.classList.remove('text-blue-500', 'hover:text-blue-700');
+                    event.target.classList.add('text-gray-500');
+                    
+                    showNotification('Đã gửi lời mời kết bạn!', 'success');
+                } else {
+                    throw new Error('Failed to send friend request');
+                }
+            } catch (error) {
+                console.error('Error sending friend request:', error);
+                showNotification('Lỗi khi gửi lời mời kết bạn', 'error');
+            }
+        };
+
+        // Accept friend request from header search
+        window.acceptFriendRequestFromHeader = async (friendshipId) => {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                
+                const response = await fetch(`/api/friends/accept/${friendshipId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Update UI - change button to "Đã là bạn"
+                    event.target.textContent = 'Đã là bạn';
+                    event.target.disabled = true;
+                    event.target.classList.remove('text-blue-500', 'hover:text-blue-700');
+                    event.target.classList.add('text-green-600');
+                    
+                    showNotification('Đã chấp nhận lời mời kết bạn!', 'success');
+                } else {
+                    throw new Error('Failed to accept friend request');
+                }
+            } catch (error) {
+                console.error('Error accepting friend request:', error);
+                showNotification('Lỗi khi chấp nhận lời mời kết bạn', 'error');
+            }
+        };
+
+        function navigateToProfile(userId) {
+            if (userId) {
+                // Hide search dropdown
+                const searchDropdown = document.getElementById('search-dropdown');
+                const searchInput = document.getElementById('header-search');
+                if (searchDropdown) searchDropdown.classList.add('hidden');
+                if (searchInput) searchInput.value = '';
+                
+                // Navigate to profile
+                window.location.href = `/profile?user=${userId}`;
+            }
+        }
+        
+        // Initialize search when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSearch();
+        });
+        
+        lucide.createIcons();
+    </script>
+</body>
+</html>

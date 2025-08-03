@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const friendSchema = new mongoose.Schema({
   requester: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'SimpleUser',
     required: true
   },
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'SimpleUser',
     required: true
   },
   status: {
@@ -54,8 +54,8 @@ friendSchema.statics.getFriends = async function(userId) {
       { recipient: userId, status: 'accepted' }
     ]
   })
-  .populate('requester', 'firstName lastName username profile.avatar')
-  .populate('recipient', 'firstName lastName username profile.avatar');
+  .populate('requester', 'firstName lastName email avatar')
+  .populate('recipient', 'firstName lastName email avatar');
 };
 
 friendSchema.statics.getPendingRequests = async function(userId) {
@@ -63,7 +63,7 @@ friendSchema.statics.getPendingRequests = async function(userId) {
     recipient: userId,
     status: 'pending'
   })
-  .populate('requester', 'firstName lastName username profile.avatar');
+  .populate('requester', 'firstName lastName email avatar');
 };
 
 friendSchema.statics.getSentRequests = async function(userId) {
@@ -71,7 +71,7 @@ friendSchema.statics.getSentRequests = async function(userId) {
     requester: userId,
     status: 'pending'
   })
-  .populate('recipient', 'firstName lastName username profile.avatar');
+  .populate('recipient', 'firstName lastName email avatar');
 };
 
 friendSchema.statics.getFriendshipStatus = async function(userId1, userId2) {

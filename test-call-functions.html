@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Call Functions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">Test Call Functions</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Cuộc Gọi</h2>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <button id="test-voice-call" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Test Voice Call
+                </button>
+                <button id="test-video-call" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test Video Call
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <button id="test-mute" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full">
+                    Test Mute/Unmute
+                </button>
+                <button id="test-timer" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 w-full">
+                    Test Timer Function
+                </button>
+                <button id="test-end-call" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 w-full">
+                    Test End Call
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+            <div id="test-results" class="space-y-2 text-sm font-mono">
+                <p>Chờ test...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        
+        function addTestResult(message, success = true) {
+            const p = document.createElement('p');
+            p.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            p.className = success ? 'text-green-600' : 'text-red-600';
+            testResults.appendChild(p);
+            testResults.scrollTop = testResults.scrollHeight;
+        }
+        
+        function clearResults() {
+            testResults.innerHTML = '';
+        }
+
+        // Test voice call
+        document.getElementById('test-voice-call').addEventListener('click', () => {
+            clearResults();
+            addTestResult('Bắt đầu test voice call với timer...');
+            
+            try {
+                // Tạo call data giả với thời gian bắt đầu cụ thể
+                const callStartTime = new Date();
+                const callData = {
+                    callType: 'voice',
+                    contactId: 'test-user-123',
+                    contactName: 'Test User',
+                    contactAvatar: 'https://placehold.co/128x128/6B7280/FFFFFF?text=TU',
+                    callerName: 'Current User',
+                    callerAvatar: 'https://placehold.co/128x128/3B82F6/FFFFFF?text=CU',
+                    callStartTime: callStartTime.toISOString()
+                };
+                
+                // Store call data
+                sessionStorage.setItem('activeCallData', JSON.stringify(callData));
+                addTestResult('✅ Call data with start time stored successfully');
+                addTestResult(`⏰ Call start time: ${callStartTime.toLocaleTimeString()}`);
+                
+                // Open active call window
+                const callWindow = window.open('/active-call.html', 'voiceCall', 'width=800,height=600,resizable=yes');
+                
+                if (callWindow) {
+                    addTestResult('✅ Voice call window opened');
+                    
+                    // Monitor timer updates
+                    let timerCheckCount = 0;
+                    const timerMonitor = setInterval(() => {
+                        timerCheckCount++;
+                        const elapsed = Math.floor((new Date() - callStartTime) / 1000);
+                        const expectedTime = `${Math.floor(elapsed / 60).toString().padStart(2, '0')}:${(elapsed % 60).toString().padStart(2, '0')}`;
+                        
+                        addTestResult(`⏱️ Expected timer: ${expectedTime} (${elapsed}s elapsed)`);
+                        
+                        if (timerCheckCount >= 5) {
+                            clearInterval(timerMonitor);
+                            addTestResult('✅ Timer monitoring completed');
+                        }
+                    }, 2000);
+                    
+                    // Test window communication
+                    setTimeout(() => {
+                        try {
+                            callWindow.postMessage({
+                                type: 'test-timer',
+                                data: 'Timer test message'
+                            }, window.location.origin);
+                            addTestResult('✅ Timer test message sent to call window');
+                        } catch (error) {
+                            addTestResult('❌ Failed to send timer test message: ' + error.message, false);
+                        }
+                    }, 3000);
+                } else {
+                    addTestResult('❌ Failed to open call window - popup blocked?', false);
+                }
+                
+            } catch (error) {
+                addTestResult('❌ Voice call test failed: ' + error.message, false);
+            }
+        });
+
+        // Test video call
+        document.getElementById('test-video-call').addEventListener('click', () => {
+            clearResults();
+            addTestResult('Bắt đầu test video call...');
+            
+            try {
+                const callData = {
+                    callType: 'video',
+                    contactId: 'test-user-456',
+                    contactName: 'Video Test User',
+                    contactAvatar: 'https://placehold.co/128x128/EF4444/FFFFFF?text=VT',
+                    callerName: 'Current User',
+                    callerAvatar: 'https://placehold.co/128x128/3B82F6/FFFFFF?text=CU',
+                    callStartTime: new Date().toISOString()
+                };
+                
+                sessionStorage.setItem('activeCallData', JSON.stringify(callData));
+                addTestResult('✅ Video call data stored');
+                
+                const callWindow = window.open('/active-call.html', 'videoCall', 'width=1000,height=700,resizable=yes');
+                
+                if (callWindow) {
+                    addTestResult('✅ Video call window opened');
+                } else {
+                    addTestResult('❌ Failed to open video call window', false);
+                }
+                
+            } catch (error) {
+                addTestResult('❌ Video call test failed: ' + error.message, false);
+            }
+        });
+
+        // Test timer functionality separately
+        document.getElementById('test-timer').addEventListener('click', () => {
+            clearResults();
+            addTestResult('Testing timer functionality...');
+            
+            try {
+                const startTime = new Date();
+                let elapsedSeconds = 0;
+                
+                addTestResult('✅ Starting test timer...');
+                addTestResult(`⏰ Start time: ${startTime.toLocaleTimeString()}`);
+                
+                // Simulate timer updates
+                const testTimer = setInterval(() => {
+                    elapsedSeconds++;
+                    const minutes = Math.floor(elapsedSeconds / 60);
+                    const seconds = elapsedSeconds % 60;
+                    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    addTestResult(`⏱️ Timer: ${timeString} (${elapsedSeconds}s)`);
+                    
+                    if (elapsedSeconds >= 10) {
+                        clearInterval(testTimer);
+                        addTestResult('✅ Timer test completed (10 seconds)');
+                        
+                        // Test time calculation
+                        const actualElapsed = Math.floor((new Date() - startTime) / 1000);
+                        addTestResult(`📊 Actual elapsed: ${actualElapsed}s vs Expected: ${elapsedSeconds}s`);
+                        
+                        if (Math.abs(actualElapsed - elapsedSeconds) <= 1) {
+                            addTestResult('✅ Timer accuracy test passed');
+                        } else {
+                            addTestResult('❌ Timer accuracy test failed - time drift detected', false);
+                        }
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                addTestResult('❌ Timer test failed: ' + error.message, false);
+            }
+        });
+
+        // Test media permissions
+        document.getElementById('test-mute').addEventListener('click', async () => {
+            clearResults();
+            addTestResult('Testing media permissions...');
+            
+            try {
+                // Test microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                addTestResult('✅ Microphone access granted');
+                
+                // Test mute/unmute
+                const audioTracks = stream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                    const track = audioTracks[0];
+                    
+                    // Test mute
+                    track.enabled = false;
+                    addTestResult('✅ Microphone muted');
+                    
+                    // Test unmute
+                    setTimeout(() => {
+                        track.enabled = true;
+                        addTestResult('✅ Microphone unmuted');
+                        
+                        // Clean up
+                        stream.getTracks().forEach(track => track.stop());
+                        addTestResult('✅ Media stream cleaned up');
+                    }, 1000);
+                } else {
+                    addTestResult('❌ No audio tracks found', false);
+                }
+                
+            } catch (error) {
+                if (error.name === 'NotAllowedError') {
+                    addTestResult('❌ Microphone access denied by user', false);
+                } else if (error.name === 'NotFoundError') {
+                    addTestResult('❌ No microphone found', false);
+                } else {
+                    addTestResult('❌ Media access error: ' + error.message, false);
+                }
+            }
+        });
+
+        // Test end call functionality
+        document.getElementById('test-end-call').addEventListener('click', () => {
+            clearResults();
+            addTestResult('Testing end call functionality...');
+            
+            try {
+                // Test sessionStorage cleanup
+                sessionStorage.setItem('activeCallData', JSON.stringify({ test: 'data' }));
+                addTestResult('✅ Test call data created');
+                
+                sessionStorage.removeItem('activeCallData');
+                const removedData = sessionStorage.getItem('activeCallData');
+                
+                if (removedData === null) {
+                    addTestResult('✅ Call data cleaned up successfully');
+                } else {
+                    addTestResult('❌ Failed to clean up call data', false);
+                }
+                
+                // Test window close simulation
+                if (window.close) {
+                    addTestResult('✅ Window.close() available');
+                } else {
+                    addTestResult('❌ Window.close() not available', false);
+                }
+                
+                addTestResult('✅ End call test completed');
+                
+            } catch (error) {
+                addTestResult('❌ End call test failed: ' + error.message, false);
+            }
+        });
+
+        // Listen for messages from call windows
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'call-ended') {
+                addTestResult('📞 Call ended: ' + JSON.stringify(event.data.data));
+            } else if (event.data.type === 'call-error') {
+                addTestResult('❌ Call error: ' + event.data.message, false);
+            }
+        });
+
+        // Initial test
+        addTestResult('🚀 Call function tester ready');
+        addTestResult('📝 Click buttons above to test call functionality');
+    </script>
+</body>
+</html>

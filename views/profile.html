@@ -14,12 +14,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
             overflow-x: hidden;
-            visibility: hidden; /* Ẩn body cho đến khi kiểm tra xong */
-        }
-        
-        /* Chỉ hiển thị khi đã đăng nhập */
-        body.authenticated {
-            visibility: visible;
         }
         
         /* --- TÙY CHỈNH THANH CUỘN --- */
@@ -360,7 +354,7 @@
                         <div class="text-center py-12">
                             <i data-lucide="file-text" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
                             <h4 class="text-xl font-semibold text-gray-500 mb-2">Chưa có bài viết nào</h4>
-                            <p class="text-gray-400 mb-4">Khi bạn đăng bài viết, chúng sẽ xuất hiện trên dòng thời gian của bạn.</p>
+                            <p class="text-gray-400 mb-6">Khi bạn đăng bài viết, chúng sẽ xuất hiện trên dòng thời gian của bạn.</p>
                             <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
                                 Tạo bài viết đầu tiên
                             </button>
@@ -371,38 +365,11 @@
         </div>
         
         <!-- View: Giới thiệu -->
-        <div id="view-about" class="hidden mt-8">
-            <div class="grid grid-cols-12 gap-8">
-                <!-- Left Column (About Nav) -->
-                <div class="col-span-12 lg:col-span-4">
-                    <div class="bg-white p-4 rounded-lg shadow sticky top-24">
-                        <h3 class="font-bold text-xl mb-4">Giới thiệu</h3>
-                        <nav id="about-nav" class="space-y-1">
-                           <a href="#" data-about-view="overview" class="about-link active flex items-center px-4 py-2 rounded-lg">Tổng quan</a>
-                           <a href="#" data-about-view="work" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Công việc và học vấn</a>
-                           <a href="#" data-about-view="places" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Nơi từng sống</a>
-                           <a href="#" data-about-view="contact" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Thông tin liên hệ và cơ bản</a>
-                           <a href="#" data-about-view="family" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Gia đình và các mối quan hệ</a>
-                           <a href="#" data-about-view="details" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Chi tiết về bạn</a>
-                           <a href="#" data-about-view="events" class="about-link flex items-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100">Sự kiện trong đời</a>
-                        </nav>
-                    </div>
-                </div>
-                <!-- Right Column (About Content) -->
-                <div class="col-span-12 lg:col-span-8">
-                    <div id="about-overview" class="about-content-view bg-white p-6 rounded-lg shadow space-y-6">
-                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="briefcase" class="w-6 h-6 text-gray-500"></i><span>Thêm nơi làm việc</span></a>
-                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="graduation-cap" class="w-6 h-6 text-gray-500"></i><span>Thêm trường học</span></a>
-                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="home" class="w-6 h-6 text-gray-500"></i><span>Thêm tỉnh/thành phố hiện tại</span></a>
-                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="map-pin" class="w-6 h-6 text-gray-500"></i><span>Thêm quê quán</span></a>
-                        <a href="#" class="flex items-center space-x-3 text-gray-700 hover:bg-gray-50 p-2 rounded-lg"><i data-lucide="heart" class="w-6 h-6 text-gray-500"></i><span>Thêm tình trạng mối quan hệ</span></a>
-                    </div>
-                    <div id="about-work" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Công việc và học vấn</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm nơi làm việc</span></a><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm trường học</span></a></div>
-                    <div id="about-places" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Nơi từng sống</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm nơi ở</span></a></div>
-                    <div id="about-contact" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Thông tin liên hệ và cơ bản</h3><p>Nội dung thông tin liên hệ.</p></div>
-                    <div id="about-family" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Gia đình và các mối quan hệ</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm thành viên</span></a></div>
-                    <div id="about-details" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Chi tiết về bạn</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm thông tin</span></a></div>
-                    <div id="about-events" class="about-content-view hidden bg-white p-6 rounded-lg shadow space-y-6"><h3 class="font-bold text-lg">Sự kiện trong đời</h3><a href="#" class="flex items-center space-x-2 text-blue-600 hover:underline"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>Thêm sự kiện</span></a></div>
+        <div id="view-about" class="hidden mt-6 px-4 md:px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-2xl mb-6">Giới thiệu</h3>
+                    <p>Nội dung trang giới thiệu sẽ được hiển thị ở đây.</p>
                 </div>
             </div>
         </div>
@@ -599,70 +566,13 @@
         </div>
     </div>
 
-    <!-- Modal Tạo bài viết -->
-    <div id="create-post-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center" style="background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-800">Tạo bài viết</h2>
-                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            
-            <!-- Content -->
-            <div class="p-4">
-                <!-- User Info -->
-                <div class="flex items-center space-x-3 mb-4">
-                    <img id="modal-user-avatar" src="https://placehold.co/48x48/000000/FFFFFF?text=B" alt="User Avatar" class="w-12 h-12 rounded-full">
-                    <div>
-                        <h3 id="modal-user-name" class="font-semibold text-gray-800">Nghia Trong</h3>
-                        <select class="text-sm text-gray-600 bg-gray-100 rounded px-2 py-1" title="Quyền riêng tư">
-                            <option>🌐 Công khai</option>
-                            <option>👥 Bạn bè</option>
-                            <option>🔒 Chỉ mình tôi</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Post Content -->
-                <textarea id="modal-post-content" class="w-full p-3 border-0 resize-none text-lg placeholder-gray-500 focus:outline-none" 
-                    placeholder="Bạn đang nghĩ gì?" rows="6"></textarea>
-                
-                <!-- Action Buttons -->
-                <div class="flex items-center justify-between mt-4 p-3 border border-gray-200 rounded-lg">
-                    <span class="text-sm font-semibold text-gray-700">Thêm vào bài viết của bạn</span>
-                    <div class="flex items-center space-x-2">
-                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Ảnh/Video">
-                            <i data-lucide="image" class="w-6 h-6 text-green-500"></i>
-                        </button>
-                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Gắn thẻ bạn bè">
-                            <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
-                        </button>
-                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Cảm xúc">
-                            <i data-lucide="smile" class="w-6 h-6 text-yellow-500"></i>
-                        </button>
-                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Vị trí">
-                            <i data-lucide="map-pin" class="w-6 h-6 text-red-500"></i>
-                        </button>
-                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="GIF">
-                            <span class="text-sm font-bold text-purple-500">GIF</span>
-                        </button>
-                        <button class="p-2 hover:bg-gray-100 rounded-full transition" title="Thêm">
-                            <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-500"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Post Button -->
-                <button id="modal-post-btn" class="w-full mt-4 py-3 bg-gray-300 text-gray-500 font-bold rounded-lg cursor-not-allowed transition" disabled>
-                    Đăng
-                </button>
-            </div>
-        </div>
-    </div>
 
     <script>
+        // Global variables
+        let currentUser = null;
+        let viewingUserId = null;
+        let isOwnProfile = true;
+
         // Kiểm tra token và initialize trang
         async function initializePage() {
             const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
@@ -677,36 +587,37 @@
             
             // Kiểm tra xem có yêu cầu xem profile của user khác không
             const urlParams = new URLSearchParams(window.location.search);
-            const viewUserId = urlParams.get('user');
+            viewingUserId = urlParams.get('user');
             
             try {
-                if (viewUserId && viewUserId !== 'undefined') {
+                if (viewingUserId && viewingUserId !== 'undefined') {
                     // Load profile của user khác
-                    await loadUserProfile(viewUserId);
+                    isOwnProfile = false;
+                    await loadUserProfile(viewingUserId);
                 } else {
                     // Load profile của chính mình từ localStorage
+                    isOwnProfile = true;
                     const storedUserInfo = localStorage.getItem('userInfo');
-                    console.log('🔍 Raw userInfo from localStorage:', storedUserInfo);
                     
                     if (storedUserInfo) {
                         try {
                             const userInfo = JSON.parse(storedUserInfo);
-                            console.log('👤 Parsed user info:', userInfo);
+                            currentUser = userInfo;
                             updateProfileInfo(userInfo);
+                            setupOwnProfile();
                             loadFriendsData();
                         } catch (parseError) {
-                            console.error('Error parsing userInfo from localStorage:', parseError);
-                            localStorage.removeItem('userInfo');
-                            window.location.replace('/login.html');
+                            console.error('Error parsing stored user info:', parseError);
+                            await loadUserProfile();
                         }
                     } else {
-                        console.log('No userInfo in localStorage, redirecting to login');
-                        window.location.replace('/login.html');
+                        console.log('No userInfo in localStorage, loading from server');
+                        await loadUserProfile();
                     }
                 }
             } catch (error) {
                 console.error('Initialize page error:', error);
-                if (!viewUserId) {
+                if (!viewingUserId) {
                     window.location.replace('/login.html');
                 }
             }
@@ -714,35 +625,119 @@
         
         // Function để cập nhật thông tin profile
         function updateProfileInfo(userInfo) {
-            console.log('� updateProfileInfo called with:', userInfo);
+            console.log('🔄 updateProfileInfo called with:', userInfo);
             
             try {
                 // Cập nhật tên trong header
                 const profileTitle = document.getElementById('profile-name');
                 if (profileTitle) {
                     const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim();
-                    profileTitle.textContent = fullName || userInfo.email || 'User';
+                    profileTitle.textContent = fullName || userInfo.username || userInfo.email || 'User';
                 }
 
                 // Cập nhật avatar
                 const avatarImg = document.getElementById('profile-avatar');
-                if (avatarImg && userInfo.firstName) {
+                const postAvatarImg = document.getElementById('profile-post-user-avatar');
+                
+                if (userInfo.profile?.avatar) {
+                    if (avatarImg) avatarImg.src = userInfo.profile.avatar;
+                    if (postAvatarImg) postAvatarImg.src = userInfo.profile.avatar;
+                } else if (userInfo.firstName) {
                     const firstLetter = userInfo.firstName.charAt(0).toUpperCase();
-                    avatarImg.src = `https://placehold.co/168x168/3B82F6/FFFFFF?text=${firstLetter}`;
-                    avatarImg.alt = `Avatar của ${userInfo.firstName}`;
+                    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.firstName)}&background=3B82F6&color=fff&size=168`;
+                    if (avatarImg) {
+                        avatarImg.src = avatarUrl;
+                        avatarImg.alt = `Avatar của ${userInfo.firstName}`;
+                    }
+                    if (postAvatarImg) {
+                        postAvatarImg.src = avatarUrl;
+                        postAvatarImg.alt = `Avatar của ${userInfo.firstName}`;
+                    }
                 }
 
-                // Cập nhật thông tin cơ bản
-                const emailElement = document.getElementById('profile-email');
-                if (emailElement) {
-                    emailElement.textContent = userInfo.email || 'N/A';
+                // Cập nhật cover photo nếu có
+                const coverPhoto = document.getElementById('cover-photo');
+                if (coverPhoto && userInfo.profile?.coverPhoto) {
+                    coverPhoto.src = userInfo.profile.coverPhoto;
+                    coverPhoto.classList.remove('hidden');
                 }
+
+                // Cập nhật thông tin trong phần giới thiệu
+                updateAboutInfo(userInfo);
                 
                 console.log('✅ Profile info updated successfully');
                 
             } catch (error) {
                 console.error('❌ Error updating profile info:', error);
             }
+        }
+
+        // Update about info
+        function updateAboutInfo(userInfo) {
+            const aboutInfo = document.getElementById('about-info');
+            if (!aboutInfo) return;
+
+            let aboutHTML = '';
+
+            // Location
+            if (userInfo.profile?.location || userInfo.location) {
+                aboutHTML += `
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-gray-500"></i>
+                        <span>Sống tại <span class="font-medium">${userInfo.profile?.location || userInfo.location}</span></span>
+                    </div>`;
+            }
+
+            // Work
+            if (userInfo.profile?.work || userInfo.work) {
+                aboutHTML += `
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="briefcase" class="w-5 h-5 text-gray-500"></i>
+                        <span>Làm việc tại <span class="font-medium">${userInfo.profile?.work || userInfo.work}</span></span>
+                    </div>`;
+            }
+
+            // Education
+            if (userInfo.profile?.education || userInfo.education) {
+                aboutHTML += `
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="graduation-cap" class="w-5 h-5 text-gray-500"></i>
+                        <span>Học tại <span class="font-medium">${userInfo.profile?.education || userInfo.education}</span></span>
+                    </div>`;
+            }
+
+            // Relationship status
+            if (userInfo.profile?.relationship || userInfo.relationship) {
+                aboutHTML += `
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="heart" class="w-5 h-5 text-gray-500"></i>
+                        <span class="font-medium">${userInfo.profile?.relationship || userInfo.relationship}</span>
+                    </div>`;
+            }
+
+            // Join date
+            if (userInfo.createdAt) {
+                const joinDate = new Date(userInfo.createdAt);
+                const monthNames = ['tháng 1', 'tháng 2', 'tháng 3', 'tháng 4', 'tháng 5', 'tháng 6',
+                    'tháng 7', 'tháng 8', 'tháng 9', 'tháng 10', 'tháng 11', 'tháng 12'];
+                aboutHTML += `
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="calendar" class="w-5 h-5 text-gray-500"></i>
+                        <span>Tham gia vào ${monthNames[joinDate.getMonth()]}, ${joinDate.getFullYear()}</span>
+                    </div>`;
+            }
+
+            // Default content if no info
+            if (!aboutHTML) {
+                aboutHTML = `
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="calendar" class="w-5 h-5 text-gray-500"></i>
+                        <span>Tham gia vào tháng 8, 2025</span>
+                    </div>`;
+            }
+
+            aboutInfo.innerHTML = aboutHTML;
+            lucide.createIcons();
         }
 
         // Load user profile from server
@@ -767,6 +762,7 @@
                     const userInfo = data.user || data;
                     console.log('Profile data received:', userInfo);
                     
+                    currentUser = userInfo;
                     updateProfileInfo(userInfo);
                     
                     // Show different UI for other users' profiles
@@ -816,39 +812,71 @@
             const actionButtonsContainer = document.querySelector('#edit-profile-btn')?.parentElement;
             if (actionButtonsContainer) {
                 // Check if we've already sent a friend request
-                const sentRequests = JSON.parse(localStorage.getItem('sentFriendRequests') || '[]');
-                const hasSentRequest = sentRequests.includes(userId);
+                checkFriendshipStatus(userId).then(status => {
+                    let friendButtonHtml = '';
+                    
+                    if (status === 'friends') {
+                        friendButtonHtml = `
+                            <button id="unfriend-btn" class="bg-gray-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold transition">
+                                <i data-lucide="user-check" class="w-4 h-4 inline mr-2"></i>
+                                Bạn bè
+                            </button>`;
+                    } else if (status === 'pending_sent') {
+                        friendButtonHtml = `
+                            <button id="cancel-request-btn" class="bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold cursor-not-allowed">
+                                <i data-lucide="clock" class="w-4 h-4 inline mr-2"></i>
+                                Đã gửi lời mời
+                            </button>`;
+                    } else if (status === 'pending_received') {
+                        friendButtonHtml = `
+                            <button id="accept-request-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition mr-2">
+                                <i data-lucide="user-plus" class="w-4 h-4 inline mr-2"></i>
+                                Chấp nhận
+                            </button>
+                            <button id="decline-request-btn" class="bg-gray-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold transition">
+                                <i data-lucide="user-x" class="w-4 h-4 inline mr-2"></i>
+                                Từ chối
+                            </button>`;
+                    } else {
+                        friendButtonHtml = `
+                            <button id="add-friend-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">
+                                <i data-lucide="user-plus" class="w-4 h-4 inline mr-2"></i>
+                                Kết bạn
+                            </button>`;
+                    }
+                    
+                    actionButtonsContainer.innerHTML = `
+                        ${friendButtonHtml}
+                        <button id="message-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold transition">
+                            <i data-lucide="message-circle" class="w-5 h-5 mr-2"></i>
+                            Nhắn tin
+                        </button>
+                    `;
+                    
+                    // Recreate icons
+                    lucide.createIcons();
+                    
+                    // Add event listeners
+                    setupFriendActionButtons(userId, status);
+                });
+            }
+        }
+
+        async function checkFriendshipStatus(userId) {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch(`/api/friends/status/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 
-                let friendButtonHtml = '';
-                if (hasSentRequest) {
-                    friendButtonHtml = `
-                        <button id="add-friend-btn" class="bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold cursor-not-allowed" disabled>
-                            <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
-                            Đã gửi lời mời
-                        </button>
-                    `;
-                } else {
-                    friendButtonHtml = `
-                        <button id="add-friend-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition">
-                            <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>
-                            Kết bạn
-                        </button>
-                    `;
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.status;
                 }
-                
-                actionButtonsContainer.innerHTML = `
-                    ${friendButtonHtml}
-                    <button id="message-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold transition">
-                        <i data-lucide="message-circle" class="w-5 h-5 mr-2"></i>
-                        Nhắn tin
-                    </button>
-                `;
-                
-                // Recreate icons
-                lucide.createIcons();
-                
-                // Add event listeners
-                setupFriendActionButtons(userId, hasSentRequest);
+                return 'none';
+            } catch (error) {
+                console.error('Error checking friendship status:', error);
+                return 'none';
             }
         }
 
@@ -862,80 +890,166 @@
             // Show edit buttons
             const editButtons = document.querySelectorAll('#edit-profile-btn, #edit-cover-btn, #edit-avatar-btn');
             editButtons.forEach(btn => {
-                if (btn) btn.style.display = 'block';
+                if (btn) btn.style.display = 'inline-flex';
             });
         }
 
-        function setupFriendActionButtons(userId, hasSentRequest) {
+        function setupFriendActionButtons(userId, currentStatus) {
             const addFriendBtn = document.getElementById('add-friend-btn');
+            const unfriendBtn = document.getElementById('unfriend-btn');
+            const cancelRequestBtn = document.getElementById('cancel-request-btn');
+            const acceptRequestBtn = document.getElementById('accept-request-btn');
+            const declineRequestBtn = document.getElementById('decline-request-btn');
             const messageBtn = document.getElementById('message-btn');
             
-            if (addFriendBtn && !hasSentRequest) {
+            // Add friend
+            if (addFriendBtn) {
                 addFriendBtn.addEventListener('click', async () => {
-                    try {
-                        const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-                        if (!token) {
-                            alert('Vui lòng đăng nhập để kết bạn');
-                            return;
-                        }
-                        
-                        // Change button state immediately
-                        addFriendBtn.disabled = true;
-                        addFriendBtn.innerHTML = `
-                            <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
-                            Đang gửi...
-                        `;
-                        addFriendBtn.className = "bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold cursor-not-allowed";
-                        lucide.createIcons();
-                        
-                        // Send friend request
-                        const response = await fetch('/api/friend-request', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({ targetUserId: userId })
-                        });
-                        
-                        if (response.ok) {
-                            addFriendBtn.innerHTML = `
-                                <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
-                                Đã gửi lời mời
-                            `;
-                            lucide.createIcons();
-                            
-                            // Store sent request
-                            const sentRequests = JSON.parse(localStorage.getItem('sentFriendRequests') || '[]');
-                            if (!sentRequests.includes(userId)) {
-                                sentRequests.push(userId);
-                                localStorage.setItem('sentFriendRequests', JSON.stringify(sentRequests));
-                            }
-                            
-                            // Show success message
-                            showNotification('Đã gửi lời mời kết bạn!', 'success');
-                        } else {
-                            throw new Error('Failed to send friend request');
-                        }
-                    } catch (error) {
-                        console.error('Error sending friend request:', error);
-                        // Reset button
-                        addFriendBtn.disabled = false;
-                        addFriendBtn.innerHTML = `
-                            <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>
-                            Kết bạn
-                        `;
-                        addFriendBtn.className = "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition";
-                        lucide.createIcons();
-                        showNotification('Có lỗi xảy ra khi gửi lời mời kết bạn', 'error');
+                    await sendFriendRequest(userId);
+                });
+            }
+
+            // Unfriend
+            if (unfriendBtn) {
+                unfriendBtn.addEventListener('click', async () => {
+                    if (confirm('Bạn có chắc muốn hủy kết bạn?')) {
+                        await unfriendUser(userId);
                     }
                 });
             }
+
+            // Cancel request
+            if (cancelRequestBtn) {
+                cancelRequestBtn.addEventListener('click', async () => {
+                    await cancelFriendRequest(userId);
+                });
+            }
+
+            // Accept request
+            if (acceptRequestBtn) {
+                acceptRequestBtn.addEventListener('click', async () => {
+                    await acceptFriendRequest(userId);
+                });
+            }
+
+            // Decline request
+            if (declineRequestBtn) {
+                declineRequestBtn.addEventListener('click', async () => {
+                    await declineFriendRequest(userId);
+                });
+            }
             
+            // Message
             if (messageBtn) {
                 messageBtn.addEventListener('click', () => {
                     window.location.href = `/messages?user=${userId}`;
                 });
+            }
+        }
+
+        // Friend action functions
+        async function sendFriendRequest(userId) {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch('/api/friends/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ recipientId: userId })
+                });
+
+                if (response.ok) {
+                    showNotification('Đã gửi lời mời kết bạn!', 'success');
+                    setupOtherUserProfile(currentUser, userId); // Refresh UI
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || 'Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending friend request:', error);
+                showNotification('Có lỗi xảy ra khi gửi lời mời kết bạn', 'error');
+            }
+        }
+
+        async function acceptFriendRequest(userId) {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch(`/api/friends/accept/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showNotification('Đã chấp nhận lời mời kết bạn!', 'success');
+                    setupOtherUserProfile(currentUser, userId); // Refresh UI
+                } else {
+                    showNotification('Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                console.error('Error accepting friend request:', error);
+                showNotification('Có lỗi xảy ra', 'error');
+            }
+        }
+
+        async function declineFriendRequest(userId) {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch(`/api/friends/decline/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showNotification('Đã từ chối lời mời kết bạn', 'info');
+                    setupOtherUserProfile(currentUser, userId); // Refresh UI
+                } else {
+                    showNotification('Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                console.error('Error declining friend request:', error);
+                showNotification('Có lỗi xảy ra', 'error');
+            }
+        }
+
+        async function cancelFriendRequest(userId) {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch(`/api/friends/cancel/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showNotification('Đã hủy lời mời kết bạn', 'info');
+                    setupOtherUserProfile(currentUser, userId); // Refresh UI
+                } else {
+                    showNotification('Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                console.error('Error canceling friend request:', error);
+                showNotification('Có lỗi xảy ra', 'error');
+            }
+        }
+
+        async function unfriendUser(userId) {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch(`/api/friends/unfriend/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showNotification('Đã hủy kết bạn', 'info');
+                    setupOtherUserProfile(currentUser, userId); // Refresh UI
+                } else {
+                    showNotification('Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                console.error('Error unfriending user:', error);
+                showNotification('Có lỗi xảy ra', 'error');
             }
         }
 
@@ -958,7 +1072,8 @@
                 const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
                 if (!token) return;
 
-                const response = await fetch('/api/friends', {
+                const url = isOwnProfile ? '/api/friends' : `/api/friends/${viewingUserId}`;
+                const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -1005,15 +1120,13 @@
                 friendsToShow.forEach((friend) => {
                     const displayName = friend.name || `${friend.firstName || ''} ${friend.lastName || ''}`.trim() || friend.username || 'User';
                     const friendId = friend.id || friend._id;
-                    const avatarUrl = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+                    const avatarUrl = friend.avatar || friend.profile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
                     
                     const friendElement = document.createElement('div');
                     friendElement.className = 'text-center';
                     friendElement.innerHTML = `
                         <div class="relative group cursor-pointer" onclick="window.location.href='/profile?user=${friendId}'">
-                            <img src="${avatarUrl}" 
-                                 alt="${displayName}" 
-                                 class="w-20 h-20 rounded-lg object-cover mx-auto mb-2 group-hover:opacity-80 transition">
+                            <img src="${avatarUrl}" alt="${displayName}" class="w-16 h-16 rounded-lg mb-2 object-cover">
                             <p class="text-sm font-medium text-gray-900 truncate">${displayName}</p>
                         </div>
                     `;
@@ -1043,7 +1156,7 @@
                 friends.forEach((friend) => {
                     const displayName = friend.name || `${friend.firstName || ''} ${friend.lastName || ''}`.trim() || friend.username || 'User';
                     const friendId = friend.id || friend._id;
-                    const avatarUrl = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+                    const avatarUrl = friend.avatar || friend.profile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
                     
                     const friendElement = document.createElement('div');
                     friendElement.className = 'bg-white rounded-xl p-4 text-center hover:shadow-md transition cursor-pointer';
@@ -1051,8 +1164,7 @@
                     
                     friendElement.innerHTML = `
                         <img src="${avatarUrl}" 
-                             alt="${displayName}" 
-                             class="w-16 h-16 rounded-full mx-auto mb-3">
+                             class="w-20 h-20 rounded-full mx-auto mb-3 object-cover">
                         <h4 class="font-semibold text-gray-900 truncate">${displayName}</h4>
                         <p class="text-sm text-gray-500">Bạn bè</p>
                     `;
@@ -1078,7 +1190,11 @@
             const fullEmpty = document.getElementById('friends-full-empty');
             const previewGrid = document.getElementById('friends-preview-grid');
             const fullGrid = document.getElementById('friends-full-grid');
+            const previewLoading = document.getElementById('friends-preview-loading');
+            const fullLoading = document.getElementById('friends-full-loading');
             
+            if (previewLoading) previewLoading.classList.add('hidden');
+            if (fullLoading) fullLoading.classList.add('hidden');
             if (previewEmpty) previewEmpty.classList.remove('hidden');
             if (fullEmpty) fullEmpty.classList.remove('hidden');
             if (previewGrid) previewGrid.classList.add('hidden');
@@ -1087,13 +1203,6 @@
             updateFriendsCount(0);
         }
 
-        // Đợi DOM load xong rồi mới initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 DOM loaded, starting initialization...');
-            initializePage();
-            initializeSearch();
-        });
-        
         // Search functionality
         function initializeSearch() {
             const searchInput = document.getElementById('header-search');
@@ -1181,12 +1290,11 @@
                 const displayName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
                 const avatarUrl = user.avatar || user.profile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
                 
-                // Không hiển thị action button (xóa nút kết bạn)
                 return `
                     <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors user-profile-link" data-user-id="${userId}">
-                        <img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full mr-3">
+                        <img src="${avatarUrl}" alt="${displayName}" class="w-10 h-10 rounded-full mr-3 object-cover">
                         <div class="flex-1">
-                            <p class="font-medium text-gray-900">${displayName}</p>
+                            <h4 class="font-medium text-gray-900">${displayName}</h4>
                             <p class="text-sm text-gray-500">${user.email}</p>
                         </div>
                     </div>
@@ -1195,12 +1303,8 @@
 
             searchResults.innerHTML = resultsHTML;
             
-            // Xóa tất cả event listeners cũ
-            const newSearchResults = searchResults.cloneNode(true);
-            searchResults.parentNode.replaceChild(newSearchResults, searchResults);
-            
-            // Thêm event listener một lần cho tất cả items
-            newSearchResults.addEventListener('click', function(e) {
+            // Add event listener for profile navigation
+            searchResults.addEventListener('click', function(e) {
                 const profileLink = e.target.closest('.user-profile-link');
                 if (profileLink) {
                     const userId = profileLink.getAttribute('data-user-id');
@@ -1212,66 +1316,6 @@
             
             lucide.createIcons();
         }
-
-        // Send friend request from header search
-        window.sendFriendRequestFromHeader = async (userId) => {
-            try {
-                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-                
-                const response = await fetch('/api/friends/request', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ recipientId: userId })
-                });
-
-                if (response.ok) {
-                    // Update UI - change button to "Đã gửi"
-                    event.target.textContent = 'Đã gửi';
-                    event.target.disabled = true;
-                    event.target.classList.remove('text-blue-500', 'hover:text-blue-700');
-                    event.target.classList.add('text-gray-500');
-                    
-                    showNotification('Đã gửi lời mời kết bạn!', 'success');
-                } else {
-                    throw new Error('Failed to send friend request');
-                }
-            } catch (error) {
-                console.error('Error sending friend request:', error);
-                showNotification('Lỗi khi gửi lời mời kết bạn', 'error');
-            }
-        };
-
-        // Accept friend request from header search
-        window.acceptFriendRequestFromHeader = async (friendshipId) => {
-            try {
-                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-                
-                const response = await fetch(`/api/friends/accept/${friendshipId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    // Update UI - change button to "Đã là bạn"
-                    event.target.textContent = 'Đã là bạn';
-                    event.target.disabled = true;
-                    event.target.classList.remove('text-blue-500', 'hover:text-blue-700');
-                    event.target.classList.add('text-green-600');
-                    
-                    showNotification('Đã chấp nhận lời mời kết bạn!', 'success');
-                } else {
-                    throw new Error('Failed to accept friend request');
-                }
-            } catch (error) {
-                console.error('Error accepting friend request:', error);
-                showNotification('Lỗi khi chấp nhận lời mời kết bạn', 'error');
-            }
-        };
 
         function navigateToProfile(userId) {
             if (userId) {
@@ -1285,12 +1329,321 @@
                 window.location.href = `/profile?user=${userId}`;
             }
         }
-        
-        // Initialize search when page loads
+
+        // Initialize notification badge
+        async function updateNotificationBadge() {
+            try {
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch('/api/notifications/unread-count', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notification-badge');
+                    if (badge) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating notification badge:', error);
+            }
+        }
+
+        // File upload handlers
+        function setupFileUploads() {
+            const coverFileInput = document.getElementById('cover-file-input');
+            const avatarFileInput = document.getElementById('avatar-file-input');
+            const uploadCoverBtn = document.getElementById('upload-cover-btn');
+            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+
+            if (uploadCoverBtn && coverFileInput) {
+                uploadCoverBtn.addEventListener('click', () => {
+                    coverFileInput.click();
+                });
+
+                coverFileInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        await uploadCoverPhoto(file);
+                    }
+                });
+            }
+
+            if (uploadAvatarBtn && avatarFileInput) {
+                uploadAvatarBtn.addEventListener('click', () => {
+                    avatarFileInput.click();
+                });
+
+                avatarFileInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        await uploadAvatar(file);
+                    }
+                });
+            }
+        }
+
+        async function uploadCoverPhoto(file) {
+            try {
+                const formData = new FormData();
+                formData.append('coverPhoto', file);
+
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch('/api/profile/cover-photo', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const coverPhoto = document.getElementById('cover-photo');
+                    if (coverPhoto) {
+                        coverPhoto.src = data.coverPhotoUrl;
+                        coverPhoto.classList.remove('hidden');
+                    }
+                    showNotification('Đã cập nhật ảnh bìa', 'success');
+                } else {
+                    showNotification('Có lỗi khi tải ảnh bìa', 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading cover photo:', error);
+                showNotification('Có lỗi khi tải ảnh bìa', 'error');
+            }
+        }
+
+        async function uploadAvatar(file) {
+            try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+                const response = await fetch('/api/profile/avatar', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const avatarImg = document.getElementById('profile-avatar');
+                    const postAvatarImg = document.getElementById('profile-post-user-avatar');
+                    
+                    if (avatarImg) avatarImg.src = data.avatarUrl;
+                    if (postAvatarImg) postAvatarImg.src = data.avatarUrl;
+                    
+                    showNotification('Đã cập nhật ảnh đại diện', 'success');
+                } else {
+                    showNotification('Có lỗi khi tải ảnh đại diện', 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading avatar:', error);
+                showNotification('Có lỗi khi tải ảnh đại diện', 'error');
+            }
+        }
+
+        // Main DOM initialization
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 DOM loaded, starting initialization...');
+            
+            // Initialize core functionality
+            initializePage();
             initializeSearch();
+            updateNotificationBadge();
+            setupFileUploads();
+            
+            // Initialize UI components
+            initializeProfileTabs();
+            initializeModals();
+            
+            // Update notification badge periodically
+            setInterval(updateNotificationBadge, 30000); // Every 30 seconds
         });
+
+        function initializeProfileTabs() {
+            const profileNav = document.getElementById('profile-nav');
+            const tabs = profileNav.querySelectorAll('.profile-tab');
+            
+            const views = {
+                posts: document.getElementById('view-posts'),
+                about: document.getElementById('view-about'),
+                friends: document.getElementById('view-friends'),
+                photos: document.getElementById('view-photos'),
+                videos: document.getElementById('view-videos'),
+            };
+
+            const showView = (viewName) => {
+                Object.values(views).forEach(view => {
+                    if (view) view.classList.add('hidden');
+                });
+                if (views[viewName]) {
+                    views[viewName].classList.remove('hidden');
+                }
+            };
+
+            profileNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = e.target.closest('.profile-tab');
+                if (!tab) return;
+
+                const viewName = tab.dataset.view;
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                showView(viewName);
+
+                // Load friends data when switching to friends tab
+                if (viewName === 'friends') {
+                    loadFriendsData();
+                }
+            });
+
+            // Handle profile tab triggers (like "Xem tất cả bạn bè")
+            document.addEventListener('click', (e) => {
+                const trigger = e.target.closest('.profile-tab-trigger');
+                if (trigger) {
+                    e.preventDefault();
+                    const viewName = trigger.dataset.view;
+                    if (viewName) {
+                        // Find and activate the corresponding tab
+                        const targetTab = document.querySelector(`[data-view="${viewName}"]`);
+                        if (targetTab) {
+                            tabs.forEach(t => t.classList.remove('active'));
+                            targetTab.classList.add('active');
+                            showView(viewName);
+                            
+                            if (viewName === 'friends') {
+                                loadFriendsData();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeModals() {
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            
+            // Modal 1: Chỉnh sửa chính
+            const modal1 = document.getElementById('edit-profile-modal');
+            const modal1Content = modal1?.querySelector('div');
+            const closeModal1Btn = document.getElementById('close-modal-btn');
+            const cancelEditBtnModal1 = document.getElementById('cancel-edit-btn-modal');
+            const addDetailsBtn = document.getElementById('add-details-btn');
+
+            // Modal 2: Chỉnh sửa chi tiết
+            const modal2 = document.getElementById('edit-details-modal');
+            const modal2Content = modal2?.querySelector('div');
+            const closeModal2Btn = document.getElementById('close-details-modal-btn');
+            const cancelEditBtnModal2 = document.getElementById('cancel-details-modal-btn');
+
+            const openModal = (modal, modalContent) => {
+                if (!modal || !modalContent) return;
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95');
+                }, 10);
+            };
+
+            const closeModal = (modal, modalContent) => {
+                if (!modal || !modalContent) return;
+                modal.classList.add('opacity-0');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            };
+
+            // Event listeners cho Modal 1
+            if (editProfileBtn && modal1 && modal1Content) {
+                editProfileBtn.addEventListener('click', () => openModal(modal1, modal1Content));
+            }
+            if (closeModal1Btn && modal1 && modal1Content) {
+                closeModal1Btn.addEventListener('click', () => closeModal(modal1, modal1Content));
+            }
+            if (cancelEditBtnModal1 && modal1 && modal1Content) {
+                cancelEditBtnModal1.addEventListener('click', () => closeModal(modal1, modal1Content));
+            }
+            if (modal1) {
+                modal1.addEventListener('click', (e) => {
+                    if (e.target === modal1 && modal1Content) closeModal(modal1, modal1Content);
+                });
+            }
+
+            // Event listeners cho Modal 2
+            if (addDetailsBtn && modal1 && modal1Content && modal2 && modal2Content) {
+                addDetailsBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    closeModal(modal1, modal1Content);
+                    setTimeout(() => openModal(modal2, modal2Content), 300);
+                });
+            }
+            if (closeModal2Btn && modal2 && modal2Content) {
+                closeModal2Btn.addEventListener('click', () => closeModal(modal2, modal2Content));
+            }
+            if (cancelEditBtnModal2 && modal2 && modal2Content) {
+                cancelEditBtnModal2.addEventListener('click', () => closeModal(modal2, modal2Content));
+            }
+            if (modal2) {
+                modal2.addEventListener('click', (e) => {
+                    if (e.target === modal2 && modal2Content) closeModal(modal2, modal2Content);
+                });
+            }
+
+            // Setup cover photo popup
+            setupCoverPhotoPopup();
+            setupAvatarPopup();
+        }
+
+        function setupCoverPhotoPopup() {
+            const editCoverBtn = document.getElementById('edit-cover-btn');
+            const coverUploadPopup = document.getElementById('cover-upload-popup');
+
+            if (editCoverBtn && coverUploadPopup) {
+                editCoverBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    coverUploadPopup.classList.toggle('hidden');
+                });
+
+                // Close popup when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!editCoverBtn.contains(e.target) && !coverUploadPopup.contains(e.target)) {
+                        coverUploadPopup.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        function setupAvatarPopup() {
+            const editAvatarBtn = document.getElementById('edit-avatar-btn');
+            const avatarUploadPopup = document.getElementById('avatar-upload-popup');
+
+            if (editAvatarBtn && avatarUploadPopup) {
+                editAvatarBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    avatarUploadPopup.classList.toggle('hidden');
+                });
+
+                // Close popup when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!editAvatarBtn.contains(e.target) && !avatarUploadPopup.contains(e.target)) {
+                        avatarUploadPopup.classList.add('hidden');
+                    }
+                });
+            }
+        }
         
+        // Initialize Lucide icons
         lucide.createIcons();
     </script>
 </body>

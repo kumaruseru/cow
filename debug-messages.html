@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Messages</title>
+</head>
+<body>
+    <h1>Debug Messages Test</h1>
+    <div id="debug-log"></div>
+    
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('debug-log');
+            logDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            console.log(message);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM Content Loaded');
+            
+            // Check localStorage
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            log('Token: ' + (token ? 'EXISTS' : 'NOT FOUND'));
+            log('UserInfo: ' + (userInfo ? 'EXISTS' : 'NOT FOUND'));
+            
+            if (token) {
+                log('Making API call to /api/conversations...');
+                
+                fetch('/api/conversations', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    log('Response status: ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    log('Response data: ' + JSON.stringify(data));
+                })
+                .catch(error => {
+                    log('Error: ' + error.message);
+                });
+            } else {
+                log('No token found, redirecting to login...');
+                window.location.replace('/login.html');
+            }
+        });
+    </script>
+</body>
+</html>

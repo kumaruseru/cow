@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Cow Social</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- NỀN LAVA LAMP (PHIÊN BẢN MỚI) --- */
+        #lava-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Đặt dưới form */
+            overflow: hidden;
+            /* Kỹ thuật tạo hiệu ứng metaball: làm mờ container và tăng độ tương phản */
+            filter: blur(30px) contrast(40);
+            background: #f0f2f5; /* Phải có nền để contrast hoạt động */
+        }
+
+        .blob {
+            position: absolute;
+            background-color: #333;
+            border-radius: 50%;
+            /* Animation sẽ được gán bằng JavaScript để có sự ngẫu nhiên */
+        }
+        
+        /* --- KEYFRAME ANIMATIONS --- */
+        @keyframes fadeInScaleUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes breathing {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes jiggle {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-4deg); }
+            75% { transform: rotate(4deg); }
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .shake-error {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* --- ÁP DỤNG ANIMATION VÀ STYLE --- */
+        .animate-fade-in-scale-up {
+            animation: fadeInScaleUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .animate-breathing {
+            animation: breathing 4s ease-in-out infinite;
+        }
+        .social-icon:hover svg {
+            animation: jiggle 0.4s;
+        }
+        
+        /* --- Hiệu ứng Nhãn Nổi (Floating Label) --- */
+        .form-group {
+            position: relative;
+        }
+        .form-input {
+            border: 2px solid #e2e8f0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-label {
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            background-color: white;
+            padding: 0 0.25rem;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+        }
+        .form-input:focus + .form-label,
+        .form-input:not(:placeholder-shown) + .form-label {
+            top: 0;
+            transform: translateY(-50%) scale(0.85);
+            color: #000;
+            font-weight: 600;
+        }
+
+        /* --- Hiệu ứng Ripple cho nút bấm --- */
+        .ripple-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple-effect 0.6s linear;
+        }
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        /* --- Icon hiển thị mật khẩu --- */
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #9ca3af;
+        }
+        .password-toggle:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen px-4">
+    
+    <!-- Container cho hiệu ứng lava lamp -->
+    <div id="lava-container"></div>
+
+    <!-- Card Đăng Nhập Chính với hiệu ứng -->
+    <div class="w-full max-w-md p-8 lg:p-10 space-y-8 bg-white rounded-3xl shadow-2xl m-4 animate-fade-in-scale-up z-10">
+        
+        <!-- Phần Header với Tiêu Đề -->
+        <div class="text-center" style="animation-delay: 100ms;">
+            <h1 class="text-4xl font-extrabold text-gray-900 mt-4">Cow Social</h1>
+            <p class="mt-2 text-base text-gray-600">Đăng nhập vào tài khoản của bạn</p>
+        </div>
+
+        <!-- Form Đăng Nhập -->
+        <form class="mt-8 space-y-6" id="login-form" method="POST" style="animation-delay: 200ms;">
+            <div class="space-y-6">
+                <div class="form-group">
+                    <input id="email-address" name="email" type="email" autocomplete="email" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Email hoặc tên người dùng">
+                    <label for="email-address" class="form-label">Email hoặc tên người dùng</label>
+                </div>
+                <div class="form-group">
+                    <input id="password" name="password" type="password" autocomplete="current-password" required class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Mật khẩu">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <span class="password-toggle" id="password-toggle-icon">
+                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7 .946-3.11 3.563-5.523 6.813-6.163M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c1.47 0 2.87.347 4.125.975m2.828 2.828A6.975 6.975 0 0119 12c-1.274 4.057-5.064 7-9.542 7-1.354 0-2.646-.3-3.825-.833M17.75 17.75L6.25 6.25" /></svg>
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center"><input id="remember-me" name="remember-me" type="checkbox" class="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black focus:ring-2 focus:ring-offset-2"><label for="remember-me" class="block ml-2 text-sm text-gray-900">Ghi nhớ tôi</label></div>
+                <div class="text-sm"><a href="/forgot-password" class="font-semibold text-black hover:underline">Quên mật khẩu?</a></div>
+            </div>
+
+            <div>
+                <button type="submit" class="ripple-btn relative flex justify-center w-full px-4 py-3 text-base font-bold text-white bg-black border border-transparent rounded-lg group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-300 ease-in-out hover:bg-gray-800 hover:shadow-lg hover:-translate-y-1">
+                    Đăng Nhập
+                </button>
+            </div>
+        </form>
+
+        <div class="relative pt-2" style="animation-delay: 300ms;">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
+            <div class="relative flex justify-center text-sm"><span class="px-2 text-gray-500 bg-white">Hoặc tiếp tục với</span></div>
+        </div>
+
+        <div style="animation-delay: 400ms;">
+            <div class="grid grid-cols-2 gap-4">
+                <a href="#" class="social-icon inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150 ease-in-out"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 48 48"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path></svg></a>
+                <a href="#" class="social-icon inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150 ease-in-out"><svg class="w-6 h-6 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"></path></svg></a>
+            </div>
+        </div>
+        
+        <p class="pt-4 text-sm text-center text-gray-600" style="animation-delay: 500ms;">
+            Chưa có tài khoản? <a href="/register" class="font-semibold text-black hover:underline">Đăng ký ngay</a>
+        </p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Logic tạo hiệu ứng lava lamp ---
+            const lavaContainer = document.getElementById('lava-container');
+            const numberOfBlobs = 15;
+
+            // Tạo keyframes động
+            const style = document.createElement('style');
+            document.head.appendChild(style);
+
+            for (let i = 0; i < numberOfBlobs; i++) {
+                const blob = document.createElement('div');
+                blob.classList.add('blob');
+
+                const size = Math.random() * 250 + 100; // Kích thước từ 100px đến 350px
+                const duration = Math.random() * 20 + 15; // Thời gian từ 15s đến 35s
+                const delay = Math.random() * -15;
+                const colors = ['#2d2d2d', '#333', '#404040', '#4a4a4a', '#555'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Vị trí ngẫu nhiên
+                const x1 = Math.random() * (window.innerWidth - size);
+                const y1 = Math.random() * (window.innerHeight - size);
+                const x2 = Math.random() * (window.innerWidth - size);
+                const y2 = Math.random() * (window.innerHeight - size);
+
+                // Thêm animation rule cho mỗi blob
+                const animationName = `move-blob-${i}`;
+                style.sheet.insertRule(`
+                    @keyframes ${animationName} {
+                        0% { transform: translate(${x1}px, ${y1}px); }
+                        50% { transform: translate(${x2}px, ${y2}px); }
+                        100% { transform: translate(${x1}px, ${y1}px); }
+                    }
+                `);
+
+                blob.style.width = `${size}px`;
+                blob.style.height = `${size}px`;
+                blob.style.backgroundColor = color;
+                blob.style.animation = `${animationName} ${duration}s ${delay}s linear infinite`;
+                
+                lavaContainer.appendChild(blob);
+            }
+
+            // --- Logic cho hiệu ứng Ripple ---
+            const rippleButtons = document.querySelectorAll('.ripple-btn');
+            rippleButtons.forEach(button => {
+                button.addEventListener('click', function (e) {
+                    const x = e.clientX - e.target.getBoundingClientRect().left;
+                    const y = e.clientY - e.target.getBoundingClientRect().top;
+
+                    const ripple = document.createElement('span');
+                    ripple.classList.add('ripple');
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+
+                    this.appendChild(ripple);
+
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+
+            // --- Logic cho việc hiển thị/ẩn mật khẩu ---
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('password-toggle-icon');
+            const eyeOpen = document.getElementById('eye-open');
+            const eyeClosed = document.getElementById('eye-closed');
+
+            toggleIcon.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                eyeOpen.classList.toggle('hidden');
+                eyeClosed.classList.toggle('hidden');
+            });
+
+            // Gắn event listener cho form
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+                console.log('Login form event listener attached');
+            }
+        });
+
+        // Kiểm tra nếu đã đăng nhập thì chuyển về trang chủ
+        (function checkAlreadyLoggedIn() {
+            console.log('🔍 Login page: Checking existing authentication...');
+            
+            const userInfo = localStorage.getItem('userInfo');
+            const token = localStorage.getItem('token');
+            
+            console.log('🔑 Login page: Token exists:', !!token);
+            console.log('👤 Login page: UserInfo exists:', !!userInfo);
+            
+            if (userInfo && token) {
+                console.log('📋 Login page: Found existing auth data, validating...');
+                try {
+                    const parsedUserInfo = JSON.parse(userInfo);
+                    console.log('👤 Login page: Parsed user info:', parsedUserInfo);
+                    
+                    if (parsedUserInfo.firstName && parsedUserInfo.loginTime) {
+                        // Kiểm tra session còn hạn không (24h)
+                        const loginTime = new Date(parsedUserInfo.loginTime);
+                        const now = new Date();
+                        const timeDiff = now - loginTime;
+                        const hoursDiff = timeDiff / (1000 * 60 * 60);
+                        
+                        console.log('⏰ Login page: Session age:', hoursDiff.toFixed(2), 'hours');
+                        
+                        if (hoursDiff <= 24) {
+                            // Session còn hạn và có token, test token trước khi redirect
+                            console.log('✅ Login page: Valid session found, testing token...');
+                            
+                            fetch('/api/posts', {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            })
+                            .then(response => {
+                                console.log('🔐 Login page: Token test response status:', response.status);
+                                if (response.ok) {
+                                    console.log('🎉 Login page: Token valid, redirecting to home...');
+                                    window.location.href = '/index.html';
+                                } else {
+                                    console.log('❌ Login page: Token invalid, clearing storage...');
+                                    localStorage.removeItem('userInfo');
+                                    localStorage.removeItem('token');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('🚫 Login page: Token test failed, clearing storage...', error);
+                                localStorage.removeItem('userInfo');
+                                localStorage.removeItem('token');
+                            });
+                            
+                            return;
+                        } else {
+                            // Session hết hạn, xóa thông tin
+                            console.log('⏰ Login page: Session expired, clearing storage...');
+                            localStorage.removeItem('userInfo');
+                            localStorage.removeItem('token');
+                        }
+                    } else {
+                        console.log('⚠️ Login page: Invalid user info structure, clearing storage...');
+                        localStorage.removeItem('userInfo');
+                        localStorage.removeItem('token');
+                    }
+                } catch (error) {
+                    // Lỗi parse, xóa thông tin
+                    console.error('💥 Login page: Parse error, clearing storage...', error);
+                    localStorage.removeItem('userInfo');
+                    localStorage.removeItem('token');
+                }
+            } else {
+                console.log('ℹ️ Login page: No existing auth data found');
+            }
+            
+            console.log('✅ Login page: Authentication check complete, ready for login...');
+        })();
+
+        // Handle login form submission
+        async function handleLogin(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('🔐 Login form submission started');
+            
+            const email = document.getElementById('email-address').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Vui lòng điền đầy đủ thông tin!');
+                return;
+            }
+            
+            console.log('📧 Email:', email);
+            console.log('🔑 Password:', password ? '[PROVIDED]' : '[MISSING]');
+            console.log('🚀 Attempting login...');
+            
+            try {
+                // Hiển thị loading
+                const submitBtn = document.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = 'Đang đăng nhập...';
+                submitBtn.disabled = true;
+
+                const requestBody = JSON.stringify({
+                    email: email,
+                    password: password
+                });
+                
+                console.log('📤 Request body:', requestBody);
+                console.log('🌐 Sending fetch request to /api/auth/login...');
+
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: requestBody
+                });
+                
+                console.log('📈 Response status:', response.status);
+                console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                const responseText = await response.text();
+                console.log('📝 Raw response:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    console.log('✅ Parsed response:', data);
+                } catch (parseError) {
+                    console.error('❌ JSON parse error:', parseError);
+                    throw new Error('Invalid JSON response: ' + responseText);
+                }
+                
+                if (response.ok && data.user) {
+                    console.log('🎉 Login successful!');
+                    console.log('👤 User data:', data.user);
+                    console.log('🔑 Access token received:', data.accessToken ? 'YES' : 'NO');
+                    
+                    const firstName = data.user.firstName || 'Bạn';
+                    alert('Đăng nhập thành công! Chào mừng ' + firstName + '!');
+                    
+                    // Lưu thông tin user và token
+                    const userDataToStore = {
+                        ...data.user,
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('userInfo', JSON.stringify(userDataToStore));
+                    console.log('💾 User info saved to localStorage:', userDataToStore);
+                    
+                    if (data.token) {
+                        localStorage.setItem('accessToken', data.token);
+                        localStorage.setItem('token', data.token); // For compatibility with other pages
+                        console.log('🔐 Access token saved to localStorage');
+                        console.log('🔑 Token preview:', data.token.substring(0, 30) + '...');
+                    }
+                    
+                    // Note: Refresh token not implemented in current server
+                    console.log('� Token stored successfully, user authenticated');
+                    
+                    console.log('🚀 Redirecting to /index.html in 1 second...');
+                    
+                    // Chuyển hướng đến trang chủ
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 1000);
+                } else {
+                    console.error('❌ Login failed:', data.error || data.message || 'Unknown error');
+                    throw new Error(data.error || data.message || 'Đăng nhập thất bại');
+                }
+            } catch (error) {
+                console.error('💥 Login error occurred:', error);
+                console.error('🔍 Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                let errorMessage = 'Có lỗi xảy ra khi đăng nhập';
+                if (error.message.includes('Invalid credentials')) {
+                    errorMessage = 'Email hoặc mật khẩu không đúng';
+                    console.error('🚫 Invalid credentials provided');
+                } else if (error.message.includes('Network')) {
+                    errorMessage = 'Lỗi kết nối mạng';
+                    console.error('🌐 Network error detected');
+                } else if (error.message.includes('JSON')) {
+                    errorMessage = 'Lỗi phản hồi từ server';
+                    console.error('📝 JSON parsing error');
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                console.error('⚠️ Displaying error to user:', errorMessage);
+                alert('Lỗi: ' + errorMessage);
+                
+                // Khôi phục button
+                const submitBtn = document.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = 'Đăng Nhập';
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

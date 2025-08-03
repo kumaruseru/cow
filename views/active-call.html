@@ -49,7 +49,15 @@
                 </div>
                 <h1 id="contact-name" class="text-4xl font-bold mt-6">Bò Húc</h1>
                 <p id="call-status" class="text-lg text-green-400 mt-2">Đã kết nối</p>
-                <p id="call-timer" class="text-lg text-gray-300 mt-1">00:00</p>
+                <div class="mt-3">
+                    <p id="call-timer" class="text-2xl font-mono text-white bg-black/30 px-4 py-2 rounded-full inline-block">00:00</p>
+                </div>
+                
+                <!-- Mute indicator -->
+                <div id="mute-indicator" class="hidden mt-3 inline-flex items-center px-3 py-1 bg-red-500/80 rounded-full">
+                    <i data-lucide="mic-off" class="w-4 h-4 text-white mr-2"></i>
+                    <span class="text-white text-sm font-medium">Đã tắt tiếng</span>
+                </div>
             </div>
 
         </div>
@@ -89,7 +97,7 @@
         <!-- Call info overlay -->
         <div class="absolute top-4 left-4 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
             <p id="video-contact-name" class="text-lg font-semibold">Bò Húc</p>
-            <p id="video-call-timer" class="text-sm text-gray-300">00:00</p>
+            <p id="video-call-timer" class="text-xl font-mono text-green-400 bg-black/40 px-2 py-1 rounded">00:00</p>
         </div>
 
         <!-- Video call controls -->
@@ -134,7 +142,7 @@
         const contactAvatar = callData.contactAvatar || '';
         const callerName = callData.callerName || 'Bạn';
         const callerAvatar = callData.callerAvatar || '';
-        const callStartTime = callData.callStartTime ? new Date(callData.callStartTime) : new Date();
+        let callStartTime = callData.callStartTime ? new Date(callData.callStartTime) : new Date();
         const isInitialVideoCall = callType === 'video';
 
         // Biến trạng thái
@@ -161,6 +169,11 @@
         const contactNameElement = document.getElementById('contact-name');
         const contactAvatarElement = document.getElementById('contact-avatar');
         const backgroundElement = document.querySelector('.background-blur');
+
+        // Debug: Check if timer elements exist
+        console.log('🔍 Timer elements check:');
+        console.log('callTimer:', callTimer ? '✅' : '❌', callTimer);
+        console.log('videoCallTimer:', videoCallTimer ? '✅' : '❌', videoCallTimer);
 
         // Cập nhật UI với dữ liệu thật
         function updateUIWithRealData() {
@@ -216,7 +229,8 @@
             
             callStatus.textContent = `Đã kết nối với ${contactName}`;
             
-            // Bắt đầu timer
+            // Bắt đầu timer - Quan trọng!
+            console.log('🚀 Starting call timer...');
             startCallTimer();
             
             // Kiểm tra loại cuộc gọi và bắt đầu phù hợp
@@ -311,23 +325,55 @@
         // Bắt đầu voice call
         async function startVoiceCall() {
             try {
+                console.log('Starting voice call...');
                 localStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: true, 
                     video: false 
                 });
                 console.log('Microphone connected successfully');
+                
+                // Cập nhật status
+                if (callStatus) {
+                    callStatus.textContent = `Đã kết nối với ${contactName}`;
+                    callStatus.classList.remove('text-red-400');
+                    callStatus.classList.add('text-green-400');
+                }
             } catch (error) {
                 console.error('Lỗi khi truy cập microphone:', error);
-                callStatus.textContent = 'Lỗi microphone';
+                
+                let errorMessage = 'Lỗi microphone';
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Không có quyền microphone';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'Không tìm thấy microphone';
+                }
+                
+                if (callStatus) {
+                    callStatus.textContent = errorMessage;
+                    callStatus.classList.remove('text-green-400');
+                    callStatus.classList.add('text-red-400');
+                }
+                
+                // Vô hiệu hóa nút mute khi không có audio
+                muteBtn.disabled = true;
+                muteBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
         }
 
         // Chuyển sang video call
         async function switchToVideoCall() {
             try {
+                console.log('Switching to video call...');
+                
                 // Dừng stream hiện tại
                 if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
+                    localStream.getTracks().forEach(track => {
+                        try {
+                            track.stop();
+                        } catch (error) {
+                            console.error('Error stopping track:', error);
+                        }
+                    });
                 }
 
                 // Yêu cầu quyền camera và microphone với settings tối ưu
@@ -363,31 +409,73 @@
                 console.error('Lỗi khi bật camera:', error);
                 
                 // Xử lý lỗi một cách mượt mà - không hiển thị alert popup
+                let errorMessage = 'Camera error';
                 if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Camera access denied';
                     console.log('User denied camera access');
                 } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'No camera found';
                     console.log('No camera found');
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = 'Camera is being used by another application';
+                    console.log('Camera is busy');
                 } else {
-                    console.log('Camera error');
+                    console.log('Camera error:', error.message);
+                }
+                
+                // Hiển thị thông báo lỗi tạm thời
+                if (callStatus) {
+                    const originalStatus = callStatus.textContent;
+                    callStatus.textContent = errorMessage;
+                    callStatus.classList.add('text-red-400');
+                    
+                    setTimeout(() => {
+                        callStatus.textContent = originalStatus;
+                        callStatus.classList.remove('text-red-400');
+                    }, 3000);
                 }
                 
                 // Tiếp tục với voice call, không làm gián đoạn UX
+                console.log('Continuing with voice call');
             }
         }
 
         // Chuyển về voice call
         async function switchToVoiceCall() {
             try {
-                // Dừng stream hiện tại
+                console.log('Switching to voice call...');
+                
+                // Dừng tất cả video tracks trước
                 if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
+                    const videoTracks = localStream.getVideoTracks();
+                    videoTracks.forEach(track => {
+                        try {
+                            track.stop();
+                            console.log('Stopped video track');
+                        } catch (error) {
+                            console.error('Error stopping video track:', error);
+                        }
+                    });
                 }
 
-                // Chỉ yêu cầu microphone
-                localStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: true, 
-                    video: false 
-                });
+                // Chỉ yêu cầu microphone, giữ lại audio tracks hiện tại nếu có thể
+                const existingAudioTracks = localStream ? localStream.getAudioTracks() : [];
+                
+                if (existingAudioTracks.length > 0 && existingAudioTracks[0].readyState === 'live') {
+                    // Giữ lại audio track hiện tại
+                    console.log('Keeping existing audio track');
+                } else {
+                    // Tạo audio stream mới
+                    if (localStream) {
+                        localStream.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    localStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: true, 
+                        video: false 
+                    });
+                    console.log('Created new audio stream');
+                }
 
                 // Chuyển giao diện
                 videoCallScreen.classList.add('hidden');
@@ -404,41 +492,79 @@
                 console.log('Switched to voice call successfully');
             } catch (error) {
                 console.error('Lỗi khi tắt camera:', error);
+                
+                // Vẫn chuyển về voice mode ngay cả khi có lỗi
+                videoCallScreen.classList.add('hidden');
+                voiceCallScreen.classList.remove('hidden');
+                isVideoMode = false;
+                
+                // Cập nhật UI
+                const icon = cameraBtn.querySelector('i');
+                icon.setAttribute('data-lucide', 'video-off');
+                cameraBtn.classList.remove('bg-blue-600');
+                cameraBtn.classList.add('bg-gray-700');
+                lucide.createIcons();
             }
         }
 
         // Toggle mute
         function toggleMute() {
-            if (!localStream) return;
+            if (!localStream) {
+                console.warn('No local stream available for muting');
+                return;
+            }
 
-            const audioTracks = localStream.getAudioTracks();
-            if (audioTracks.length > 0) {
-                isMuted = !isMuted;
-                audioTracks[0].enabled = !isMuted;
+            try {
+                const audioTracks = localStream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                    isMuted = !isMuted;
+                    audioTracks[0].enabled = !isMuted;
 
-                // Cập nhật UI cho voice call
-                const voiceIcon = muteBtn.querySelector('i');
-                
-                // Cập nhật UI cho video call
-                const videoIcon = videoMuteBtn.querySelector('i');
+                    // Cập nhật UI cho voice call
+                    const voiceIcon = muteBtn.querySelector('i');
+                    
+                    // Cập nhật UI cho video call
+                    const videoIcon = videoMuteBtn.querySelector('i');
+                    
+                    // Mute indicator
+                    const muteIndicator = document.getElementById('mute-indicator');
 
-                if (isMuted) {
-                    voiceIcon.setAttribute('data-lucide', 'mic-off');
-                    videoIcon.setAttribute('data-lucide', 'mic-off');
-                    muteBtn.classList.remove('bg-gray-700');
-                    muteBtn.classList.add('bg-red-500');
-                    videoMuteBtn.classList.remove('bg-gray-700');
-                    videoMuteBtn.classList.add('bg-red-500');
+                    if (isMuted) {
+                        voiceIcon.setAttribute('data-lucide', 'mic-off');
+                        videoIcon.setAttribute('data-lucide', 'mic-off');
+                        muteBtn.classList.remove('bg-gray-700');
+                        muteBtn.classList.add('bg-red-500');
+                        videoMuteBtn.classList.remove('bg-gray-700');
+                        videoMuteBtn.classList.add('bg-red-500');
+                        
+                        // Hiển thị mute indicator
+                        if (muteIndicator) {
+                            muteIndicator.classList.remove('hidden');
+                        }
+                        
+                        console.log('Microphone muted');
+                    } else {
+                        voiceIcon.setAttribute('data-lucide', 'mic');
+                        videoIcon.setAttribute('data-lucide', 'mic');
+                        muteBtn.classList.remove('bg-red-500');
+                        muteBtn.classList.add('bg-gray-700');
+                        videoMuteBtn.classList.remove('bg-red-500');
+                        videoMuteBtn.classList.add('bg-gray-700');
+                        
+                        // Ẩn mute indicator
+                        if (muteIndicator) {
+                            muteIndicator.classList.add('hidden');
+                        }
+                        
+                        console.log('Microphone unmuted');
+                    }
+
+                    lucide.createIcons();
                 } else {
-                    voiceIcon.setAttribute('data-lucide', 'mic');
-                    videoIcon.setAttribute('data-lucide', 'mic');
-                    muteBtn.classList.remove('bg-red-500');
-                    muteBtn.classList.add('bg-gray-700');
-                    videoMuteBtn.classList.remove('bg-red-500');
-                    videoMuteBtn.classList.add('bg-gray-700');
+                    console.warn('No audio tracks found');
                 }
-
-                lucide.createIcons();
+            } catch (error) {
+                console.error('Error toggling mute:', error);
             }
         }
 
@@ -453,12 +579,19 @@
         // Function bắt đầu timer
         function startCallTimer() {
             callStartTime = new Date();
+            console.log('📞 Call timer started at:', callStartTime);
             callTimerInterval = setInterval(updateCallTimer, 1000);
+            
+            // Update immediately
+            updateCallTimer();
         }
 
         // Function cập nhật timer
         function updateCallTimer() {
-            if (!callStartTime) return;
+            if (!callStartTime) {
+                console.warn('⚠️ No callStartTime available for timer update');
+                return;
+            }
             
             const now = new Date();
             const elapsed = Math.floor((now - callStartTime) / 1000);
@@ -466,42 +599,111 @@
             const seconds = elapsed % 60;
             
             const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            callTimer.textContent = timeString;
-            videoCallTimer.textContent = timeString;
+            
+            // Update both timers
+            let timerUpdated = false;
+            if (callTimer) {
+                callTimer.textContent = timeString;
+                timerUpdated = true;
+            }
+            if (videoCallTimer) {
+                videoCallTimer.textContent = timeString;
+                timerUpdated = true;
+            }
+            
+            // Backup: Update document title if DOM elements failed
+            if (!timerUpdated) {
+                document.title = `[${timeString}] Cuộc gọi với ${contactName}`;
+                console.log('⚠️ Using title fallback for timer display');
+            }
+            
+            // Debug log every 10 seconds
+            if (elapsed % 10 === 0) {
+                console.log(`📞 Call duration: ${timeString} (${elapsed}s)`);
+            }
         }
 
         // Function kết thúc cuộc gọi
         function endCall() {
-            console.log(`Cuộc gọi ${callType} với ${userName} kết thúc`);
+            console.log(`Cuộc gọi ${callType} với ${contactName} kết thúc`);
             
-            // Dừng timer
-            if (callTimerInterval) {
-                clearInterval(callTimerInterval);
-                callTimerInterval = null;
+            try {
+                // Dừng timer TRƯỚC KHI cleanup
+                if (callTimerInterval) {
+                    clearInterval(callTimerInterval);
+                    callTimerInterval = null;
+                    console.log('📞 Call timer stopped');
+                }
+                
+                // Dừng media stream
+                if (localStream) {
+                    localStream.getTracks().forEach(track => {
+                        try {
+                            track.stop();
+                            console.log(`Stopped ${track.kind} track`);
+                        } catch (error) {
+                            console.error(`Error stopping ${track.kind} track:`, error);
+                        }
+                    });
+                    localStream = null;
+                }
+                
+                // Reset trạng thái
+                isCallActive = false;
+                isMuted = false;
+                isVideoMode = false;
+                callStartTime = null;
+                
+                console.log('Call ended successfully');
+                
+                // Xóa call data từ sessionStorage
+                sessionStorage.removeItem('activeCallData');
+                
+            } catch (error) {
+                console.error('Error ending call:', error);
             }
-            
-            // Dừng media stream
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    track.stop();
-                });
-                localStream = null;
-            }
-            
-            // Reset trạng thái
-            isCallActive = false;
             
             // Đóng trang hiện tại
-            window.close();
-            
-            // Fallback: Nếu không thể đóng cửa sổ, chuyển về messages
-            setTimeout(() => {
+            try {
+                window.close();
+            } catch (error) {
+                console.log('Cannot close window, redirecting...');
                 window.location.href = '/messages.html';
-            }, 100);
+            }
         }
 
         // Bắt đầu cuộc gọi khi trang load
         startActiveCall();
+
+        // Debug: Test timer elements after page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔍 DOM loaded - Re-checking timer elements:');
+            const callTimerCheck = document.getElementById('call-timer');
+            const videoCallTimerCheck = document.getElementById('video-call-timer');
+            
+            console.log('callTimer after DOM load:', callTimerCheck ? '✅' : '❌', callTimerCheck);
+            console.log('videoCallTimer after DOM load:', videoCallTimerCheck ? '✅' : '❌', videoCallTimerCheck);
+            
+            // Force update timer display
+            if (callTimerInterval && callStartTime) {
+                console.log('🔄 Forcing timer update after DOM load...');
+                updateCallTimer();
+            }
+        });
+
+        // Additional check after a delay
+        setTimeout(() => {
+            console.log('🔍 Final timer elements check (after 2s):');
+            const finalCallTimer = document.getElementById('call-timer');
+            const finalVideoCallTimer = document.getElementById('video-call-timer');
+            
+            console.log('Final callTimer:', finalCallTimer ? '✅' : '❌', finalCallTimer);
+            console.log('Final videoCallTimer:', finalVideoCallTimer ? '✅' : '❌', finalVideoCallTimer);
+            
+            if (finalCallTimer) {
+                console.log('Current timer text:', finalCallTimer.textContent);
+            }
+        }, 2000);
 
         // Xử lý khi đóng trang
         window.addEventListener('beforeunload', () => {
@@ -510,6 +712,48 @@
                     track.stop();
                 });
             }
+        });
+
+        // Thêm keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Ngăn chặn các phím tắt khi đang focus vào input
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch (event.key.toLowerCase()) {
+                case 'm':
+                    // M key để toggle mute
+                    event.preventDefault();
+                    toggleMute();
+                    break;
+                case 'v':
+                    // V key để toggle video
+                    event.preventDefault();
+                    if (isVideoMode) {
+                        switchToVoiceCall();
+                    } else {
+                        switchToVideoCall();
+                    }
+                    break;
+                case 'escape':
+                case 'e':
+                    // ESC hoặc E key để kết thúc cuộc gọi
+                    event.preventDefault();
+                    endCall();
+                    break;
+            }
+        });
+
+        // Hiển thị keyboard shortcuts khi hover
+        document.addEventListener('DOMContentLoaded', () => {
+            // Thêm tooltip cho các nút
+            muteBtn.title = 'Tắt/Bật tiếng (M)';
+            videoMuteBtn.title = 'Tắt/Bật tiếng (M)';
+            cameraBtn.title = 'Bật camera (V)';
+            videoCameraBtn.title = 'Tắt camera (V)';
+            endCallBtn.title = 'Kết thúc cuộc gọi (E hoặc ESC)';
+            videoEndCallBtn.title = 'Kết thúc cuộc gọi (E hoặc ESC)';
         });
     </script>
 </body>

@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   sender: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'SimpleUser',
     required: true
   },
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'SimpleUser',
     required: true
   },
   content: {
@@ -28,6 +28,11 @@ const messageSchema = new mongoose.Schema({
     size: Number,
     mimeType: String
   }],
+  conversationId: {
+    type: String,
+    required: true,
+    index: true
+  },
   isRead: {
     type: Boolean,
     default: false
@@ -43,13 +48,15 @@ const messageSchema = new mongoose.Schema({
   deletedBy: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'SimpleUser'
     },
     deletedAt: {
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  editedAt: Date,
+  originalMessage: String
 }, {
   timestamps: true
 });

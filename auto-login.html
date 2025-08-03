@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Login Test</title>
+</head>
+<body>
+    <h1>Auto Login Test</h1>
+    <div id="status"></div>
+    
+    <script>
+        function log(message) {
+            document.getElementById('status').innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            console.log(message);
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            log('Starting auto login...');
+            
+            try {
+                const loginData = {
+                    email: 'nghiaht281003@gmail.com',
+                    password: 'password123'
+                };
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(loginData)
+                });
+                
+                const result = await response.json();
+                log('Login response: ' + JSON.stringify(result));
+                
+                if (result.success && result.accessToken) {
+                    localStorage.setItem('accessToken', result.accessToken);
+                    localStorage.setItem('userInfo', JSON.stringify(result.userInfo));
+                    log('Login successful, redirecting to messages...');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/messages.html';
+                    }, 1000);
+                } else {
+                    log('Login failed: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

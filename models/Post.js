@@ -52,6 +52,14 @@ const PostSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  location: {
+    place_id: String,
+    name: String,
+    address: String,
+    lat: Number,
+    lng: Number,
+    types: [String]
+  },
   tags: [{
     type: String,
     trim: true,
@@ -71,7 +79,11 @@ const PostSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  shares: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Posts Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+            <h1>Debug Posts System</h1>
+    
+    <div class="test-section">
+        <h2>🧪 Test Like/Comment/Share API</h2>
+        <div>
+            <input type="text" id="postId" placeholder="Post ID" style="margin: 5px; padding: 8px;">
+            <button onclick="testLike()" style="margin: 5px; padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 4px;">Test Like</button>
+            <button onclick="testComment()" style="margin: 5px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px;">Test Comment</button>
+            <button onclick="testShare()" style="margin: 5px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px;">Test Share</button>
+        </div>
+        <div>
+            <textarea id="commentContent" placeholder="Comment content" style="margin: 5px; padding: 8px; width: 300px; height: 60px;"></textarea>
+        </div>
+        <pre id="interactionResult" style="background: #f3f4f6; padding: 10px; margin: 10px 0; white-space: pre-wrap;"></pre>
+    </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Test API Calls</h2>
+                <div class="space-y-4">
+                    <button id="test-posts-no-auth" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full">
+                        Test Posts (No Auth)
+                    </button>
+                    <button id="test-posts-auth" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full">
+                        Test Posts (With Auth)
+                    </button>
+                    <button id="create-test-post" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 w-full">
+                        Create Test Post
+                    </button>
+                    <button id="check-token" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full">
+                        Check Token
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Debug Info</h2>
+                <div id="debug-info" class="space-y-2 text-sm font-mono">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">API Responses</h2>
+            <div id="api-responses" class="space-y-4 max-h-96 overflow-y-auto">
+                <p class="text-gray-500">Click buttons above to see API responses...</p>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Posts Display</h2>
+            <div id="posts-container" class="space-y-4">
+                <p class="text-gray-500">Posts will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const debugInfo = document.getElementById('debug-info');
+        const apiResponses = document.getElementById('api-responses');
+        const postsContainer = document.getElementById('posts-container');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const p = document.createElement('p');
+            p.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> ${message}`;
+            p.className = type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-blue-600';
+            apiResponses.insertBefore(p, apiResponses.firstChild);
+        }
+        
+        function updateDebugInfo() {
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            debugInfo.innerHTML = `
+                <p><strong>Token:</strong> ${token ? 'EXISTS (length: ' + token.length + ')' : 'NOT FOUND'}</p>
+                <p><strong>User Info:</strong> ${userInfo ? 'EXISTS' : 'NOT FOUND'}</p>
+                <p><strong>Current URL:</strong> ${window.location.href}</p>
+                <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            `;
+        }
+        
+        // Test Like functionality
+        async function testLike() {
+            const postId = document.getElementById('postId').value;
+            if (!postId) {
+                alert('Please enter a Post ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                document.getElementById('interactionResult').textContent = 
+                    `Like Response:\n${JSON.stringify(result, null, 2)}`;
+                    
+                if (result.success) {
+                    addLog(`✅ Like ${result.liked ? 'added' : 'removed'}: ${result.likeCount} likes`, 'success');
+                    await fetchPosts();
+                }
+            } catch (error) {
+                document.getElementById('interactionResult').textContent = 
+                    `Like Error:\n${error.message}`;
+                addLog(`❌ Like error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Comment functionality
+        async function testComment() {
+            const postId = document.getElementById('postId').value;
+            const content = document.getElementById('commentContent').value;
+            
+            if (!postId) {
+                alert('Please enter a Post ID');
+                return;
+            }
+            
+            if (!content) {
+                alert('Please enter comment content');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+                
+                const result = await response.json();
+                document.getElementById('interactionResult').textContent = 
+                    `Comment Response:\n${JSON.stringify(result, null, 2)}`;
+                    
+                if (result.success) {
+                    document.getElementById('commentContent').value = '';
+                    addLog(`✅ Comment added: ${result.commentCount} comments`, 'success');
+                    await fetchPosts();
+                }
+            } catch (error) {
+                document.getElementById('interactionResult').textContent = 
+                    `Comment Error:\n${error.message}`;
+                addLog(`❌ Comment error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Share functionality
+        async function testShare() {
+            const postId = document.getElementById('postId').value;
+            if (!postId) {
+                alert('Please enter a Post ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/posts/${postId}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                document.getElementById('interactionResult').textContent = 
+                    `Share Response:\n${JSON.stringify(result, null, 2)}`;
+                    
+                if (result.success) {
+                    addLog(`✅ Post shared: ${result.shareCount} shares`, 'success');
+                    await fetchPosts();
+                }
+            } catch (error) {
+                document.getElementById('interactionResult').textContent = 
+                    `Share Error:\n${error.message}`;
+                addLog(`❌ Share error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test posts without auth
+        document.getElementById('test-posts-no-auth').addEventListener('click', async () => {
+            addLog('Testing posts API without authentication...');
+            try {
+                const response = await fetch('/api/posts/test');
+                const data = await response.json();
+                addLog(`✅ No-auth API success: ${data.count} posts found`, 'success');
+                addLog(`📄 Response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                addLog(`❌ No-auth API error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Test posts with auth
+        document.getElementById('test-posts-auth').addEventListener('click', async () => {
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            
+            if (!token) {
+                addLog('❌ No token found for authenticated request', 'error');
+                return;
+            }
+            
+            addLog('Testing posts API with authentication...');
+            try {
+                const response = await fetch('/api/posts', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                addLog(`📡 Auth API response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`❌ Auth API error: ${response.status} - ${errorText}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                addLog(`✅ Auth API success: ${data.posts?.length || 0} posts`, 'success');
+                addLog(`📄 Response: ${JSON.stringify(data, null, 2)}`);
+                
+                // Display posts
+                displayPosts(data.posts || []);
+                
+            } catch (error) {
+                addLog(`❌ Auth API error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Create test post
+        document.getElementById('create-test-post').addEventListener('click', async () => {
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            
+            if (!token) {
+                addLog('❌ No token found for creating post', 'error');
+                return;
+            }
+            
+            const content = `Test post created at ${new Date().toLocaleString()}`;
+            addLog(`Creating test post: "${content}"`);
+            
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+                
+                addLog(`📡 Create post response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`❌ Create post error: ${response.status} - ${errorText}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                addLog(`✅ Post created successfully!`, 'success');
+                addLog(`📄 New post: ${JSON.stringify(data, null, 2)}`);
+                
+                // Refresh posts
+                document.getElementById('test-posts-auth').click();
+                
+            } catch (error) {
+                addLog(`❌ Create post error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Check token
+        document.getElementById('check-token').addEventListener('click', () => {
+            const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+            
+            if (token) {
+                try {
+                    // Decode JWT payload
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    addLog(`✅ Token decoded successfully`, 'success');
+                    addLog(`👤 User ID: ${payload.userId}`);
+                    addLog(`📧 Email: ${payload.email}`);
+                    addLog(`⏰ Expires: ${new Date(payload.exp * 1000).toLocaleString()}`);
+                    addLog(`🕒 Issued: ${new Date(payload.iat * 1000).toLocaleString()}`);
+                } catch (error) {
+                    addLog(`❌ Invalid token format: ${error.message}`, 'error');
+                }
+            } else {
+                addLog('❌ No token found in localStorage', 'error');
+            }
+        });
+        
+        function displayPosts(posts) {
+            if (posts.length === 0) {
+                postsContainer.innerHTML = '<p class="text-gray-500">No posts found</p>';
+                return;
+            }
+            
+            postsContainer.innerHTML = posts.map(post => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            ${post.author?.firstName?.[0] || 'U'}
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-semibold">${post.author?.firstName || 'Unknown'} ${post.author?.lastName || 'User'}</p>
+                            <p class="text-sm text-gray-500">${new Date(post.createdAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-800 mb-3">${post.content}</p>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span>❤️ ${post.likes?.length || 0} likes</span>
+                        <span>💬 ${post.comments?.length || 0} comments</span>
+                        <span>ID: ${post._id}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Initial update
+        updateDebugInfo();
+        
+        // Update debug info every 5 seconds
+        setInterval(updateDebugInfo, 5000);
+        
+        addLog('🚀 Posts debug page loaded');
+    </script>
+</body>
+</html>

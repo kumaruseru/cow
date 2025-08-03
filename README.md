@@ -247,9 +247,14 @@ JWT_SECRET=your-super-secure-jwt-secret-32-chars-min
 JWT_REFRESH_SECRET=your-refresh-secret-32-chars-min
 SESSION_SECRET=your-session-secret-32-chars-min
 
+# Google Maps API (for location features)
+GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+
 # Optional: Redis for rate limiting
 REDIS_URL=redis://localhost:6379
 ```
+
+> 📍 **Location Features Setup**: Xem [OPENSTREETMAP_SETUP.md](./OPENSTREETMAP_SETUP.md) để hướng dẫn tích hợp OpenStreetMap (miễn phí, không cần API key)
 
 ---
 
@@ -314,9 +319,18 @@ npm run test:watch
 
 ### Social Features
 - `GET /api/posts` - Get posts feed
-- `POST /api/posts` - Create post
+- `POST /api/posts` - Create post (with images & location)
 - `POST /api/posts/:id/like` - Like/unlike post
 - `POST /api/posts/:id/comments` - Add comment
+
+### Location Services
+- `GET /api/location/search` - Search places via Google Maps
+- `POST /api/location/reverse` - Convert coordinates to address
+
+### Media Upload
+- Support multiple image upload with drag & drop
+- Automatic image optimization and thumbnail generation
+- Secure file validation and storage
 
 ### Messaging
 - `GET /api/messages/conversations` - Get conversations

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            overflow-x: hidden;
+            visibility: hidden; /* Ẩn body cho đến khi kiểm tra xong */
+        }
+        
+        /* Chỉ hiển thị khi đã đăng nhập */
+        body.authenticated {
+            visibility: visible;
+        }
+        
+        /* --- TÙY CHỈNH THANH CUỘN --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Transition cho menu tùy chọn */
+        .options-menu {
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+        
+        /* Style cho thông báo chưa đọc */
+        .notification-item.unread {
+            background-color: #eff6ff; /* Màu xanh nhạt */
+        }
+        .notification-item.unread:hover {
+            background-color: #e0e7ff;
+        }
+
+        /* Hiệu ứng Glassmorphism cho sidebar */
+        .glassmorphism-sidebar {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        
+        /* Animation cho các mục thông báo */
+        @keyframes item-fade-in {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-item-in {
+            opacity: 0;
+            animation: item-fade-in 0.5s ease-out forwards;
+        }
+
+        .sidebar-link.active {
+            background-color: #000;
+            color: #fff;
+            box-shadow: 0 4px 14px 0 rgb(0 0 0 / 10%);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header chính -->
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="relative flex items-center justify-between h-16 px-4">
+            <!-- Cột Trái: Logo và Thanh tìm kiếm -->
+            <div class="flex items-center space-x-2">
+                <div class="flex-shrink-0">
+                    <a href="/" class="block" title="Về trang chủ">
+                        <svg class="w-10 h-10 text-black hover:text-gray-700 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-5H8v-2h8v2z"/><path d="M19.36 8.64C18.48 7.52 17.3 6.66 16 6.18V4.05c1.73.64 3.22 1.76 4.36 3.14l-1 1.45zM4.64 8.64l-1-1.45C4.78 5.81 6.27 4.69 8 4.05v2.13c-1.3.48-2.48 1.34-3.36 2.46z"/><path d="M12 18c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4z" opacity=".5"/></svg>
+                    </a>
+                </div>
+                <div class="relative hidden lg:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                    </span>
+                    <input type="search" placeholder="Tìm kiếm trên Cow..." class="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 border-transparent focus:bg-white focus:border-gray-300 focus:ring-black/50 transition">
+                </div>
+            </div>
+            <!-- Cột Giữa: Navigation Icons (định vị tuyệt đối) -->
+            <nav class="hidden md:flex items-center justify-center space-x-2 absolute left-1/2 -translate-x-1/2">
+                <a href="/" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang chủ"><i data-lucide="home" class="w-6 h-6"></i></a>
+                <a href="/messages" class="p-3 rounded-full hover:bg-gray-100 transition" title="Tin nhắn"><i data-lucide="message-square" class="w-6 h-6"></i></a>
+                <a href="/notifications" class="p-3 rounded-full bg-gray-200 transition relative" title="Thông báo">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </a>
+                <a href="/friends" class="p-3 rounded-full hover:bg-gray-100 transition" title="Bạn bè"><i data-lucide="users" class="w-6 h-6"></i></a>
+                <a href="/profile" class="p-3 rounded-full hover:bg-gray-100 transition" title="Trang cá nhân"><i data-lucide="user" class="w-6 h-6"></i></a>
+            </nav>
+            <!-- Cột Phải: User Profile -->
+            <div class="flex items-center space-x-3">
+                <!-- Nội dung đã được xóa -->
+            </div>
+                <!-- Nội dung đã được xóa -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto h-[calc(100vh-64px)] p-4">
+        <div class="flex h-full rounded-3xl shadow-2xl overflow-hidden">
+            <!-- Left Sidebar -->
+            <aside class="hidden md:block w-1/4 glassmorphism-sidebar flex-col">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">Thông báo</h2>
+                    </div>
+                    <nav id="notification-nav" class="space-y-2">
+                        <a href="#" data-filter="all" class="sidebar-link active flex items-center font-semibold p-3 rounded-xl">
+                            <span>Tất cả</span>
+                        </a>
+                        <a href="#" data-filter="unread" class="sidebar-link flex items-center font-semibold text-gray-600 hover:bg-white/50 p-3 rounded-xl transition">
+                            <span>Chưa đọc</span>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Notification List -->
+            <div class="w-full md:w-3/4 overflow-y-auto p-8 bg-white">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg">Thông báo</h3>
+                    <button id="mark-all-read" class="text-sm font-semibold text-blue-600 hover:underline disabled:opacity-50">Đánh dấu tất cả là đã đọc</button>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loading-state" class="flex items-center justify-center py-12">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span class="ml-3 text-gray-600">Đang tải thông báo...</span>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-12">
+                    <i data-lucide="bell-off" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Không có thông báo</h3>
+                    <p class="text-gray-500">Bạn sẽ thấy thông báo ở đây khi có hoạt động mới.</p>
+                </div>
+                
+                <!-- Notification List -->
+                <div id="notification-list" class="space-y-3 hidden">
+                    <!-- Notifications will be populated here -->
+                </div>
+                
+                <!-- Load More Button -->
+                <div id="load-more-container" class="hidden text-center mt-6">
+                    <button id="load-more-btn" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">
+                        Tải thêm thông báo
+                    </button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Authentication check with better validation
+        let token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        
+        console.log('Token check - Raw value:', token);
+        console.log('Token type:', typeof token);
+        console.log('Token length:', token ? token.length : 'N/A');
+        
+        // Validate token exists and is not empty
+        if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
+            console.log('No valid token found, redirecting to login');
+            localStorage.removeItem('token');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/login.html';
+        } else {
+            // Ensure token is available under both keys for compatibility
+            if (!localStorage.getItem('token')) {
+                localStorage.setItem('token', token);
+            }
+            if (!localStorage.getItem('accessToken')) {
+                localStorage.setItem('accessToken', token);
+            }
+            console.log('Valid token found, loading page');
+            document.body.classList.add('authenticated');
+        }
+
+        // Global variables
+        let currentPage = 1;
+        let currentFilter = 'all';
+        let isLoading = false;
+        let hasMoreNotifications = true;
+
+        // DOM elements
+        const loadingState = document.getElementById('loading-state');
+        const emptyState = document.getElementById('empty-state');
+        const notificationList = document.getElementById('notification-list');
+        const loadMoreContainer = document.getElementById('load-more-container');
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const markAllReadBtn = document.getElementById('mark-all-read');
+
+        // Load notifications from API
+        async function loadNotifications(page = 1, append = false) {
+            if (isLoading) return;
+            
+            isLoading = true;
+            
+            try {
+                if (page === 1 && !append) {
+                    loadingState.classList.remove('hidden');
+                    notificationList.classList.add('hidden');
+                    emptyState.classList.add('hidden');
+                }
+
+                const params = new URLSearchParams({
+                    page: page,
+                    limit: 20,
+                    unreadOnly: currentFilter === 'unread' ? 'true' : 'false'
+                });
+
+                const response = await fetch(`/api/notifications?${params}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+                        localStorage.removeItem('userInfo');
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error('Failed to load notifications');
+                }
+
+                const data = await response.json();
+                
+                if (page === 1 && !append) {
+                    loadingState.classList.add('hidden');
+                }
+
+                if (data.notifications.length === 0 && page === 1) {
+                    emptyState.classList.remove('hidden');
+                    loadMoreContainer.classList.add('hidden');
+                } else {
+                    notificationList.classList.remove('hidden');
+                    
+                    if (!append) {
+                        notificationList.innerHTML = '';
+                    }
+                    
+                    data.notifications.forEach(notification => {
+                        const notificationElement = createNotificationElement(notification);
+                        notificationList.appendChild(notificationElement);
+                    });
+
+                    // Update pagination
+                    currentPage = page;
+                    hasMoreNotifications = page < data.pagination.pages;
+                    
+                    if (hasMoreNotifications) {
+                        loadMoreContainer.classList.remove('hidden');
+                    } else {
+                        loadMoreContainer.classList.add('hidden');
+                    }
+                }
+
+                // Update mark all read button
+                updateMarkAllReadButton(data.unreadCount);
+
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                showToast('Không thể tải thông báo', 'error');
+                
+                if (page === 1) {
+                    loadingState.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                }
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // Create notification element
+        function createNotificationElement(notification) {
+            const div = document.createElement('div');
+            div.className = `notification-item ${!notification.isRead ? 'unread' : ''} flex items-center justify-between p-4 rounded-2xl hover:shadow-md transition-shadow cursor-pointer group`;
+            div.dataset.notificationId = notification._id;
+
+            const avatar = notification.sender?.profile?.avatar || 
+                          `https://placehold.co/56x56/${getRandomColor()}/FFFFFF?text=${getInitials(notification.sender)}`;
+            
+            const senderName = notification.sender ? 
+                              `${notification.sender.firstName || ''} ${notification.sender.lastName || ''}`.trim() || 
+                              notification.sender.username : 
+                              'Hệ thống';
+
+            const { icon, iconColor } = getNotificationIcon(notification.type);
+            const timeAgo = formatTimeAgo(notification.createdAt);
+            const message = getNotificationMessage(notification);
+
+            div.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <div class="relative flex-shrink-0">
+                        <img src="${avatar}" alt="Avatar" class="w-14 h-14 rounded-full object-cover">
+                        <span class="absolute -bottom-1 -right-1 ${iconColor} p-1 rounded-full text-white border-2 ${!notification.isRead ? 'border-blue-100' : 'border-white'}">
+                            <i data-lucide="${icon}" class="w-3 h-3"></i>
+                        </span>
+                    </div>
+                    <div class="flex-1">
+                        <p><span class="font-bold">${senderName}</span> ${message}</p>
+                        <p class="text-sm ${!notification.isRead ? 'text-blue-600 font-semibold' : 'text-gray-500'}">${timeAgo}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="unread-dot w-3 h-3 ${!notification.isRead ? 'bg-blue-500' : 'bg-transparent'} rounded-full flex-shrink-0" ${!notification.isRead ? 'title="Chưa đọc"' : ''}></span>
+                    <div class="relative">
+                        <button class="options-btn p-2 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity" data-notification-id="${notification._id}">
+                            <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                        </button>
+                        <div class="options-menu hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl z-10 origin-top-right ring-1 ring-black ring-opacity-5">
+                            <div class="py-1">
+                                ${!notification.isRead ? 
+                                    '<button class="mark-read-btn w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"><i data-lucide="check-circle" class="w-5 h-5 mr-3"></i>Đánh dấu là đã đọc</button>' : ''}
+                                <button class="delete-btn w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 text-left"><i data-lucide="x-circle" class="w-5 h-5 mr-3"></i>Xóa thông báo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Get notification message based on type
+        function getNotificationMessage(notification) {
+            switch (notification.type) {
+                case 'like':
+                    return 'đã thích bài viết của bạn.';
+                case 'comment':
+                    return 'đã bình luận về bài viết của bạn.';
+                case 'friend_request':
+                    return 'đã gửi lời mời kết bạn cho bạn.';
+                case 'friend_accept':
+                    return 'đã chấp nhận lời mời kết bạn của bạn.';
+                case 'follow':
+                    return 'đã bắt đầu theo dõi bạn.';
+                case 'mention':
+                    return 'đã nhắc đến bạn trong một bài viết.';
+                case 'share':
+                    return 'đã chia sẻ bài viết của bạn.';
+                default:
+                    return notification.message || 'có hoạt động mới.';
+            }
+        }
+
+        // Get notification icon and color
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'like':
+                    return { icon: 'heart', iconColor: 'bg-red-500' };
+                case 'comment':
+                    return { icon: 'message-circle', iconColor: 'bg-blue-500' };
+                case 'friend_request':
+                    return { icon: 'user-plus', iconColor: 'bg-green-500' };
+                case 'friend_accept':
+                    return { icon: 'user-check', iconColor: 'bg-green-500' };
+                case 'follow':
+                    return { icon: 'user-plus', iconColor: 'bg-purple-500' };
+                case 'mention':
+                    return { icon: 'at-sign', iconColor: 'bg-yellow-500' };
+                case 'share':
+                    return { icon: 'share-2', iconColor: 'bg-orange-500' };
+                default:
+                    return { icon: 'bell', iconColor: 'bg-gray-500' };
+            }
+        }
+
+        // Utility functions
+        function getRandomColor() {
+            const colors = ['E91E63', '3F51B5', 'FFC107', '9C27B0', '4CAF50', 'FF5722'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function getInitials(user) {
+            if (!user) return 'S';
+            if (user.firstName && user.lastName) {
+                return (user.firstName.charAt(0) + user.lastName.charAt(0)).toUpperCase();
+            }
+            if (user.username) {
+                return user.username.charAt(0).toUpperCase();
+            }
+            return 'U';
+        }
+
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            const intervals = [
+                { label: 'năm', seconds: 31536000 },
+                { label: 'tháng', seconds: 2592000 },
+                { label: 'tuần', seconds: 604800 },
+                { label: 'ngày', seconds: 86400 },
+                { label: 'giờ', seconds: 3600 },
+                { label: 'phút', seconds: 60 }
+            ];
+
+            for (const interval of intervals) {
+                const count = Math.floor(seconds / interval.seconds);
+                if (count >= 1) {
+                    return `${count} ${interval.label} trước`;
+                }
+            }
+
+            return 'Vừa xong';
+        }
+
+        function updateMarkAllReadButton(unreadCount) {
+            if (unreadCount > 0) {
+                markAllReadBtn.disabled = false;
+                markAllReadBtn.textContent = `Đánh dấu tất cả là đã đọc (${unreadCount})`;
+            } else {
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.textContent = 'Đánh dấu tất cả là đã đọc';
+            }
+        }
+
+        // Mark notification as read
+        async function markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (notificationElement) {
+                        notificationElement.classList.remove('unread');
+                        const unreadDot = notificationElement.querySelector('.unread-dot');
+                        if (unreadDot) {
+                            unreadDot.classList.remove('bg-blue-500');
+                            unreadDot.classList.add('bg-transparent');
+                            unreadDot.removeAttribute('title');
+                        }
+                        
+                        // Update time text color
+                        const timeText = notificationElement.querySelector('p:last-child');
+                        if (timeText) {
+                            timeText.className = 'text-sm text-gray-500';
+                        }
+                    }
+                    
+                    // If in unread filter, remove the notification
+                    if (currentFilter === 'unread') {
+                        setTimeout(() => {
+                            if (notificationElement) {
+                                notificationElement.remove();
+                            }
+                            checkEmptyState();
+                        }, 300);
+                    }
+                } else if (response.status === 401) {
+                    // Unauthorized - redirect to login
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = '/login.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Delete notification
+        async function deleteNotification(notificationId) {
+            try {
+                const response = await fetch(`/api/notifications/${notificationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (notificationElement) {
+                        notificationElement.remove();
+                        checkEmptyState();
+                    }
+                    showToast('Đã xóa thông báo', 'success');
+                } else if (response.status === 401) {
+                    // Unauthorized - redirect to login
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = '/login.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+                showToast('Không thể xóa thông báo', 'error');
+            }
+        }
+
+        // Mark all as read
+        async function markAllAsRead() {
+            try {
+                const response = await fetch('/api/notifications/mark-all-read', {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Update UI
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                        const unreadDot = item.querySelector('.unread-dot');
+                        if (unreadDot) {
+                            unreadDot.classList.remove('bg-blue-500');
+                            unreadDot.classList.add('bg-transparent');
+                            unreadDot.removeAttribute('title');
+                        }
+                        
+                        const timeText = item.querySelector('p:last-child');
+                        if (timeText) {
+                            timeText.className = 'text-sm text-gray-500';
+                        }
+                    });
+
+                    updateMarkAllReadButton(0);
+                    
+                    if (currentFilter === 'unread') {
+                        setTimeout(() => {
+                            loadNotifications(1);
+                        }, 300);
+                    }
+                    
+                    showToast('Đã đánh dấu tất cả thông báo là đã đọc', 'success');
+                } else if (response.status === 401) {
+                    // Unauthorized - redirect to login
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = '/login.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                showToast('Không thể đánh dấu tất cả thông báo', 'error');
+            }
+        }
+
+        function checkEmptyState() {
+            if (notificationList.children.length === 0) {
+                notificationList.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                loadMoreContainer.classList.add('hidden');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            } text-white`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial notifications
+            loadNotifications();
+
+            // Filter navigation
+            document.querySelectorAll('[data-filter]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    // Update active state
+                    document.querySelectorAll('[data-filter]').forEach(l => {
+                        l.classList.remove('active');
+                        l.classList.add('text-gray-600', 'hover:bg-white/50');
+                    });
+                    
+                    link.classList.add('active');
+                    link.classList.remove('text-gray-600', 'hover:bg-white/50');
+                    
+                    // Update filter and reload
+                    currentFilter = link.dataset.filter;
+                    currentPage = 1;
+                    loadNotifications();
+                });
+            });
+
+            // Load more button
+            loadMoreBtn.addEventListener('click', () => {
+                if (!isLoading && hasMoreNotifications) {
+                    loadNotifications(currentPage + 1, true);
+                }
+            });
+
+            // Mark all as read button
+            markAllReadBtn.addEventListener('click', () => {
+                if (!markAllReadBtn.disabled) {
+                    markAllAsRead();
+                }
+            });
+
+            // Event delegation for notification actions
+            document.addEventListener('click', (e) => {
+                // Toggle options menu
+                if (e.target.closest('.options-btn')) {
+                    e.stopPropagation();
+                    const btn = e.target.closest('.options-btn');
+                    const menu = btn.nextElementSibling;
+                    
+                    // Close other menus
+                    document.querySelectorAll('.options-menu').forEach(m => {
+                        if (m !== menu) m.classList.add('hidden');
+                    });
+                    
+                    menu.classList.toggle('hidden');
+                    return;
+                }
+
+                // Mark as read
+                if (e.target.closest('.mark-read-btn')) {
+                    e.stopPropagation();
+                    const notificationId = e.target.closest('.notification-item').dataset.notificationId;
+                    markAsRead(notificationId);
+                    e.target.closest('.options-menu').classList.add('hidden');
+                    return;
+                }
+
+                // Delete notification
+                if (e.target.closest('.delete-btn')) {
+                    e.stopPropagation();
+                    const notificationId = e.target.closest('.notification-item').dataset.notificationId;
+                    if (confirm('Bạn có chắc muốn xóa thông báo này?')) {
+                        deleteNotification(notificationId);
+                    }
+                    e.target.closest('.options-menu').classList.add('hidden');
+                    return;
+                }
+
+                // Click on notification (mark as read if unread)
+                const notificationItem = e.target.closest('.notification-item');
+                if (notificationItem && notificationItem.classList.contains('unread')) {
+                    const notificationId = notificationItem.dataset.notificationId;
+                    markAsRead(notificationId);
+                }
+
+                // Close menus when clicking elsewhere
+                document.querySelectorAll('.options-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            });
+
+            // Initialize Lucide icons
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

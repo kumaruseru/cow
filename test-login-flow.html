@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Flow - Cow Social</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Test Login Flow</h1>
+        
+        <!-- Clear Storage -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">1. Clear Storage</h2>
+            <button id="clear-storage" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Clear All Storage
+            </button>
+            <div id="storage-status" class="mt-2 text-sm text-gray-600"></div>
+        </div>
+
+        <!-- Test Login -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">2. Test Login</h2>
+            <div class="mb-4">
+                <input type="email" id="test-email" placeholder="Email" value="hohuong15052005@gmail.com" 
+                       class="w-full p-2 border rounded mb-2">
+                <input type="password" id="test-password" placeholder="Password" value="123456" 
+                       class="w-full p-2 border rounded mb-2">
+                <button id="test-login" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test Login
+                </button>
+            </div>
+            <div id="login-result" class="text-sm"></div>
+        </div>
+
+        <!-- Check Storage -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">3. Check Storage After Login</h2>
+            <button id="check-storage" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Check Storage
+            </button>
+            <div id="storage-result" class="mt-2 text-sm"></div>
+        </div>
+
+        <!-- Test API Call -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">4. Test API Call</h2>
+            <button id="test-api" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                Test /api/posts
+            </button>
+            <div id="api-result" class="mt-2 text-sm"></div>
+        </div>
+
+        <!-- Log -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">5. Debug Log</h2>
+            <div id="debug-log" class="bg-gray-100 p-4 rounded text-xs font-mono max-h-96 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        let debugLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            debugLog.push(logEntry);
+            console.log(logEntry);
+            
+            const logElement = document.getElementById('debug-log');
+            logElement.innerHTML = debugLog.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Clear Storage
+        document.getElementById('clear-storage').addEventListener('click', function() {
+            localStorage.clear();
+            sessionStorage.clear();
+            log('Storage cleared');
+            document.getElementById('storage-status').innerHTML = '✅ Storage cleared';
+        });
+
+        // Test Login
+        document.getElementById('test-login').addEventListener('click', async function() {
+            try {
+                const email = document.getElementById('test-email').value;
+                const password = document.getElementById('test-password').value;
+                
+                log(`Attempting login with email: ${email}`);
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                log(`Login response status: ${response.status}`);
+                
+                const data = await response.json();
+                log(`Login response data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.success && data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('accessToken', data.token);
+                    localStorage.setItem('userInfo', JSON.stringify(data.user));
+                    
+                    log('Token and user info saved to localStorage');
+                    document.getElementById('login-result').innerHTML = '✅ Login successful';
+                    document.getElementById('login-result').className = 'text-sm text-green-600';
+                } else {
+                    log(`Login failed: ${data.error || 'Unknown error'}`);
+                    document.getElementById('login-result').innerHTML = '❌ Login failed: ' + (data.error || 'Unknown error');
+                    document.getElementById('login-result').className = 'text-sm text-red-600';
+                }
+            } catch (error) {
+                log(`Login error: ${error.message}`, 'error');
+                document.getElementById('login-result').innerHTML = '❌ Login error: ' + error.message;
+                document.getElementById('login-result').className = 'text-sm text-red-600';
+            }
+        });
+
+        // Check Storage
+        document.getElementById('check-storage').addEventListener('click', function() {
+            const token = localStorage.getItem('token');
+            const accessToken = localStorage.getItem('accessToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            log(`Token: ${token ? 'EXISTS (' + token.substring(0, 30) + '...)' : 'MISSING'}`);
+            log(`AccessToken: ${accessToken ? 'EXISTS (' + accessToken.substring(0, 30) + '...)' : 'MISSING'}`);
+            log(`UserInfo: ${userInfo ? 'EXISTS' : 'MISSING'}`);
+            
+            if (userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    log(`User: ${user.firstName} ${user.lastName} (${user.email})`);
+                } catch (e) {
+                    log(`Error parsing userInfo: ${e.message}`, 'error');
+                }
+            }
+            
+            const storageHtml = `
+                <div class="space-y-2">
+                    <div>Token: ${token ? '✅ ' + token.substring(0, 50) + '...' : '❌ Missing'}</div>
+                    <div>AccessToken: ${accessToken ? '✅ ' + accessToken.substring(0, 50) + '...' : '❌ Missing'}</div>
+                    <div>UserInfo: ${userInfo ? '✅ Exists' : '❌ Missing'}</div>
+                </div>
+            `;
+            document.getElementById('storage-result').innerHTML = storageHtml;
+        });
+
+        // Test API
+        document.getElementById('test-api').addEventListener('click', async function() {
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+                
+                if (!token) {
+                    log('No token found for API call', 'error');
+                    document.getElementById('api-result').innerHTML = '❌ No token found';
+                    document.getElementById('api-result').className = 'mt-2 text-sm text-red-600';
+                    return;
+                }
+                
+                log(`Making API call with token: ${token.substring(0, 30)}...`);
+                
+                const response = await fetch('/api/posts', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                log(`API response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const posts = await response.json();
+                    log(`API call successful, received ${posts.length} posts`);
+                    document.getElementById('api-result').innerHTML = `✅ API call successful (${posts.length} posts)`;
+                    document.getElementById('api-result').className = 'mt-2 text-sm text-green-600';
+                } else {
+                    const errorData = await response.json();
+                    log(`API call failed: ${JSON.stringify(errorData)}`, 'error');
+                    document.getElementById('api-result').innerHTML = `❌ API call failed: ${errorData.error || response.status}`;
+                    document.getElementById('api-result').className = 'mt-2 text-sm text-red-600';
+                }
+            } catch (error) {
+                log(`API call error: ${error.message}`, 'error');
+                document.getElementById('api-result').innerHTML = '❌ API call error: ' + error.message;
+                document.getElementById('api-result').className = 'mt-2 text-sm text-red-600';
+            }
+        });
+
+        // Initialize
+        log('Test page loaded');
+    </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Test - Cow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <h1 class="text-xl font-bold text-blue-600">Cow Social</h1>
+                    <nav class="flex space-x-4">
+                        <a href="/index.html" class="text-gray-600 hover:text-gray-900">Trang chủ</a>
+                        <a href="/friends.html" class="text-gray-600 hover:text-gray-900">Bạn bè</a>
+                        <a href="/profile.html" class="text-blue-600 font-medium">Hồ sơ</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-4xl mx-auto py-8 px-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <span id="profile-avatar" class="text-white text-4xl font-bold">U</span>
+                    </div>
+                    <h1 id="profile-name" class="text-3xl font-bold text-gray-900 mb-2">Loading...</h1>
+                    <p class="text-gray-600 mb-4">Thông tin đang được tải...</p>
+                </div>
+
+                <div class="mt-8">
+                    <h2 class="text-xl font-semibold mb-4">Thông tin cá nhân</h2>
+                    <div class="space-y-2">
+                        <p><strong>Email:</strong> <span id="profile-email">Loading...</span></p>
+                        <p><strong>Tên:</strong> <span id="profile-fullname">Loading...</span></p>
+                        <p><strong>Ngày tham gia:</strong> <span id="profile-joined">Loading...</span></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        console.log('🚀 Profile test page loading...');
+        
+        // Simple test initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 DOM loaded, starting profile test...');
+            
+            // Check if user is logged in
+            const userInfo = localStorage.getItem('userInfo');
+            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            
+            if (!token) {
+                console.log('❌ No token found, redirecting to login');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            if (userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    console.log('👤 User data found:', user);
+                    
+                    // Update profile info
+                    const profileName = document.getElementById('profile-name');
+                    const profileEmail = document.getElementById('profile-email');
+                    const profileFullname = document.getElementById('profile-fullname');
+                    const profileAvatar = document.getElementById('profile-avatar');
+                    
+                    if (profileName) {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                        profileName.textContent = fullName || user.email || 'Người dùng';
+                    }
+                    
+                    if (profileEmail) {
+                        profileEmail.textContent = user.email || 'N/A';
+                    }
+                    
+                    if (profileFullname) {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                        profileFullname.textContent = fullName || 'Chưa cập nhật';
+                    }
+                    
+                    if (profileAvatar && user.firstName) {
+                        profileAvatar.textContent = user.firstName.charAt(0).toUpperCase();
+                    }
+                    
+                    console.log('✅ Profile info updated successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Error parsing user info:', error);
+                    document.getElementById('profile-name').textContent = 'Lỗi tải thông tin';
+                }
+            } else {
+                console.log('⚠️ No user info in localStorage');
+                document.getElementById('profile-name').textContent = 'Không tìm thấy thông tin người dùng';
+            }
+        });
+    </script>
+</body>
+</html>

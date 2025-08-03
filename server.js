@@ -11,7 +11,9 @@ const {
   applySecurityMiddleware, 
   applyValidationRules, 
   applyErrorHandling 
-} = require('./middleware/integrated-security');const {
+} = require('./middleware/integrated-security');
+
+const {
   authenticateToken,
   generateToken,
   generateRefreshToken,
@@ -67,7 +69,9 @@ const findUserByEmail = async (email) => {
     if (!email || typeof email !== 'string') {
       return null;
     }
-    return await User.findByEmail(email);
+    // Normalize email to lowercase before searching
+    const normalizedEmail = email.toLowerCase().trim();
+    return await User.findByEmail(normalizedEmail);
   } catch (error) {
     logger.error('Error finding user by email:', error);
     return null;
@@ -123,9 +127,11 @@ app.post(
   '/api/auth/register',
   async (req, res) => {
     try {
-      const { firstName, lastName, email, password, birthDate, gender, profile } = req.body;
+      // Normalize email to lowercase
+      const { firstName, lastName, password, birthDate, gender, profile } = req.body;
+      const email = req.body.email ? req.body.email.toLowerCase().trim() : '';
 
-    logger.info('Registration attempt', { email, ip: req.ip });
+      logger.info('Registration attempt', { email, ip: req.ip });
 
     // Check if user already exists
     const existingUser = await findUserByEmail(email);
@@ -201,9 +207,11 @@ app.post(
   '/api/auth/login',
   async (req, res) => {
     try {
-      const { email, password } = req.body;
-    const clientIp = req.ip;
-    const userAgent = req.get('User-Agent');
+      // Normalize email to lowercase
+      const { password } = req.body;
+      const email = req.body.email ? req.body.email.toLowerCase().trim() : '';
+      const clientIp = req.ip;
+      const userAgent = req.get('User-Agent');
 
     logger.info('Login attempt', { email, ip: clientIp });
 
