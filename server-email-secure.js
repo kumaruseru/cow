@@ -1104,62 +1104,109 @@ app.get('/api/posts/:postId/comments', authenticateToken, async (req, res) => {
   }
 });
 
-// Get trending topics/hashtags
+// Get trending topics/hashtags from real data
 app.get('/api/posts/trending', authenticateToken, async (req, res) => {
   try {
     console.log('📈 Getting trending topics for user:', req.user.userId);
     
-    // For now, return simulated trending data
-    // In a real implementation, this would analyze post content for hashtags
     const currentTime = new Date();
-    const trending = [
-      {
-        hashtag: 'CowSocialNetwork',
-        count: Math.floor(Math.random() * 100) + 50,
-        trend: 'HOT',
-        growth: '+25%'
-      },
-      {
-        hashtag: 'SinhVien',
-        count: Math.floor(Math.random() * 75) + 30,
-        trend: 'TĂNG',
-        growth: '+18%'
-      },
-      {
-        hashtag: 'CongNghe',
-        count: Math.floor(Math.random() * 60) + 25,
-        trend: 'HOT',
-        growth: '+15%'
-      },
-      {
-        hashtag: 'TinTuc',
-        count: Math.floor(Math.random() * 45) + 20,
-        trend: 'TĂNG',
-        growth: '+12%'
-      },
-      {
-        hashtag: 'GiaiTri',
-        count: Math.floor(Math.random() * 35) + 15,
-        trend: 'TĂNG',
-        growth: '+8%'
-      },
-      {
-        hashtag: 'DuLich',
-        count: Math.floor(Math.random() * 30) + 10,
-        trend: 'TĂNG',
-        growth: '+6%'
-      }
-    ];
+    const sevenDaysAgo = new Date(currentTime - 7 * 24 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(currentTime - 24 * 60 * 60 * 1000);
+    
+    // Get all posts from last 7 days with tags
+    const posts = await Post.find({
+      privacy: 'public',
+      isActive: true,
+      createdAt: { $gte: sevenDaysAgo },
+      tags: { $exists: true, $not: { $size: 0 } }
+    }).select('tags createdAt likes comments');
 
-    // Shuffle the array to make it more dynamic
-    const shuffled = trending.sort(() => 0.5 - Math.random());
+    console.log(`📊 Found ${posts.length} posts with tags in last 7 days`);
 
-    res.json({
-      success: true,
-      trending: shuffled,
-      count: shuffled.length,
-      lastUpdated: currentTime.toISOString()
+    // Manual aggregation to avoid MongoDB version issues
+    const tagStats = {};
+    
+    posts.forEach(post => {
+      const isRecent = post.createdAt >= oneDayAgo;
+      const likeCount = post.likes ? post.likes.length : 0;
+      const commentCount = post.comments ? post.comments.length : 0;
+      const engagement = likeCount + commentCount;
+      
+      post.tags.forEach(tag => {
+        if (!tagStats[tag]) {
+          tagStats[tag] = {
+            count: 0,
+            recentPosts: 0,
+            totalLikes: 0,
+            totalComments: 0,
+            engagement: 0
+          };
+        }
+        
+        tagStats[tag].count++;
+        if (isRecent) tagStats[tag].recentPosts++;
+        tagStats[tag].totalLikes += likeCount;
+        tagStats[tag].totalComments += commentCount;
+        tagStats[tag].engagement += engagement;
+      });
     });
+
+    // Convert to array and calculate trend scores
+    const trendingArray = Object.entries(tagStats).map(([tag, stats]) => {
+      const trendScore = stats.count + (stats.recentPosts * 3) + (stats.engagement * 0.5);
+      
+      const growthRate = stats.recentPosts > 0 ? Math.min(((stats.recentPosts / stats.count) * 100), 99) : 0;
+      let trend = 'TĂNG';
+      let growth = `+${Math.round(Math.max(growthRate, 5))}%`;
+      
+      if (growthRate > 50 || stats.engagement > 10) {
+        trend = 'HOT';
+      }
+
+      return {
+        hashtag: tag,
+        count: stats.count,
+        trend: trend,
+        growth: growth,
+        engagement: stats.engagement,
+        recentActivity: stats.recentPosts,
+        trendScore: trendScore
+      };
+    });
+
+    // Sort by trend score and take top 10
+    const trending = trendingArray
+      .sort((a, b) => b.trendScore - a.trendScore)
+      .slice(0, 10);
+
+    console.log(`🔥 Top trending hashtags:`, trending.map(t => `#${t.hashtag} (${t.count} posts)`));
+
+    // If no real data, provide some default trending topics
+    if (trending.length === 0) {
+      const defaultTrending = [
+        { hashtag: 'CowSocialNetwork', count: 15, trend: 'HOT', growth: '+25%', engagement: 45, recentActivity: 5 },
+        { hashtag: 'SinhVien', count: 12, trend: 'TĂNG', growth: '+18%', engagement: 28, recentActivity: 3 },
+        { hashtag: 'CongNghe', count: 10, trend: 'HOT', growth: '+15%', engagement: 35, recentActivity: 4 },
+        { hashtag: 'TinTuc', count: 8, trend: 'TĂNG', growth: '+12%', engagement: 22, recentActivity: 2 },
+        { hashtag: 'GiaiTri', count: 6, trend: 'TĂNG', growth: '+8%', engagement: 18, recentActivity: 2 }
+      ];
+      
+      res.json({
+        success: true,
+        trending: defaultTrending,
+        count: defaultTrending.length,
+        lastUpdated: currentTime.toISOString(),
+        dataSource: 'default'
+      });
+    } else {
+      res.json({
+        success: true,
+        trending: trending,
+        count: trending.length,
+        lastUpdated: currentTime.toISOString(),
+        dataSource: 'realtime'
+      });
+    }
 
   } catch (error) {
     console.error('❌ Error getting trending topics:', error);
