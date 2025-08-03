@@ -58,11 +58,23 @@
         .form-input {
             border: 2px solid #e2e8f0;
             transition: border-color 0.2s, box-shadow 0.2s;
+            /* Hỗ trợ IME và bàn phím tiếng Việt */
+            ime-mode: disabled; /* Tắt IME cho input số */
         }
         .form-input:focus, .form-input.focused {
             outline: none;
             border-color: #000;
             box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+        /* Hỗ trợ composition events cho IME */
+        .form-input[inputmode="numeric"] {
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+        }
+        /* Highlight khi đang compose với IME */
+        .form-input.composing {
+            background-color: #fef3c7;
+            border-color: #f59e0b;
         }
         .form-label {
             position: absolute;
@@ -175,17 +187,26 @@
                     <div class="grid grid-cols-6 gap-2">
                         <!-- Day Input -->
                         <div class="form-group col-span-2">
-                            <input id="birth-day" name="birth-day" type="text" maxlength="2" class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Ngày">
+                            <input id="birth-day" name="birth-day" type="text" maxlength="2" 
+                                   inputmode="numeric" pattern="[0-9]*" autocomplete="bday-day"
+                                   class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" 
+                                   placeholder="Ngày">
                             <label for="birth-day" class="form-label">Ngày</label>
                         </div>
                         <!-- Month Input -->
                         <div class="form-group col-span-2">
-                            <input id="birth-month" name="birth-month" type="text" maxlength="2" class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Tháng">
+                            <input id="birth-month" name="birth-month" type="text" maxlength="2" 
+                                   inputmode="numeric" pattern="[0-9]*" autocomplete="bday-month"
+                                   class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" 
+                                   placeholder="Tháng">
                             <label for="birth-month" class="form-label">Tháng</label>
                         </div>
                         <!-- Year Input -->
                         <div class="form-group col-span-2">
-                            <input id="birth-year" name="birth-year" type="text" maxlength="4" class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" placeholder="Năm">
+                            <input id="birth-year" name="birth-year" type="text" maxlength="4" 
+                                   inputmode="numeric" pattern="[0-9]*" autocomplete="bday-year"
+                                   class="form-input relative block w-full px-4 py-3.5 text-gray-900 rounded-lg appearance-none placeholder-transparent" 
+                                   placeholder="Năm">
                             <label for="birth-year" class="form-label">Năm</label>
                         </div>
                     </div>
@@ -367,26 +388,66 @@
 
                 console.log('Date inputs found, setting up validation...');
 
-                // Chỉ cho phép nhập số với smart auto-focus
+                // Chỉ cho phép nhập số với smart auto-focus - Hỗ trợ IME và bàn phím tiếng Việt
                 function allowOnlyNumbers(input) {
-                    input.addEventListener('input', function(e) {
-                        // Chỉ giữ lại các ký tự số
-                        this.value = this.value.replace(/[^0-9]/g, '');
+                    let isComposing = false;
+                    let lastValidValue = '';
+
+                    // Theo dõi trạng thái composing của IME
+                    input.addEventListener('compositionstart', function(e) {
+                        isComposing = true;
+                        lastValidValue = this.value;
+                        this.classList.add('composing');
                     });
 
-                    input.addEventListener('keypress', function(e) {
-                        // Chỉ cho phép nhập số
-                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
-                            e.preventDefault();
+                    input.addEventListener('compositionend', function(e) {
+                        isComposing = false;
+                        this.classList.remove('composing');
+                        // Xử lý dữ liệu sau khi IME hoàn thành
+                        setTimeout(() => {
+                            this.value = this.value.replace(/[^0-9]/g, '');
+                            // Trigger input event để các validation khác chạy
+                            this.dispatchEvent(new Event('input', { bubbles: true }));
+                        }, 0);
+                    });
+
+                    input.addEventListener('input', function(e) {
+                        // Không xử lý khi đang trong quá trình composing của IME
+                        if (isComposing) {
+                            return;
+                        }
+                        
+                        // Chỉ giữ lại các ký tự số
+                        const newValue = this.value.replace(/[^0-9]/g, '');
+                        if (this.value !== newValue) {
+                            this.value = newValue;
                         }
                     });
 
-                    // Xử lý phím Backspace để quay lại field trước
+                    // Xử lý các phím đặc biệt (không can thiệp vào IME)
                     input.addEventListener('keydown', function(e) {
+                        // Cho phép các phím điều hướng và chỉnh sửa
+                        const allowedKeys = [
+                            'Backspace', 'Delete', 'Tab', 'Enter', 'Escape',
+                            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                            'Home', 'End', 'PageUp', 'PageDown'
+                        ];
+                        
+                        // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                        if (e.ctrlKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
+                            return;
+                        }
+                        
+                        // Nếu đang composing (IME hoạt động), không can thiệp
+                        if (isComposing) {
+                            return;
+                        }
+                        
+                        // Xử lý phím Backspace để quay lại field trước
                         if (e.key === 'Backspace' && this.value === '' && this.selectionStart === 0) {
-                            // Nếu đang ở field trống và nhấn Backspace, chuyển về field trước
                             const id = this.id;
                             if (id === 'birth-month') {
+                                e.preventDefault();
                                 setTimeout(() => {
                                     const dayInput = document.getElementById('birth-day');
                                     if (dayInput) {
@@ -395,6 +456,7 @@
                                     }
                                 }, 10);
                             } else if (id === 'birth-year') {
+                                e.preventDefault();
                                 setTimeout(() => {
                                     const monthInput = document.getElementById('birth-month');
                                     if (monthInput) {
@@ -403,6 +465,28 @@
                                     }
                                 }, 10);
                             }
+                        }
+                        
+                        // Chỉ cho phép số và các phím đặc biệt
+                        if (!allowedKeys.includes(e.key) && (e.key.length === 1 && !/[0-9]/.test(e.key))) {
+                            // Không chặn nếu là phím tổ hợp hoặc có thể là IME
+                            if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+                                e.preventDefault();
+                            }
+                        }
+                    });
+
+                    // Xử lý paste để chỉ cho phép số
+                    input.addEventListener('paste', function(e) {
+                        e.preventDefault();
+                        const paste = (e.clipboardData || window.clipboardData).getData('text');
+                        const numbersOnly = paste.replace(/[^0-9]/g, '');
+                        if (numbersOnly) {
+                            // Chỉ lấy số ký tự phù hợp với maxlength
+                            const maxLength = parseInt(this.getAttribute('maxlength')) || numbersOnly.length;
+                            this.value = numbersOnly.substring(0, maxLength);
+                            // Trigger input event
+                            this.dispatchEvent(new Event('input', { bubbles: true }));
                         }
                     });
                 }
@@ -494,49 +578,52 @@
                     }
                     
                     input.addEventListener('input', function(e) {
-                        const value = this.value;
-                        
-                        // Auto-format: nếu nhập 1 chữ số
-                        if (value.length === 1) {
-                            const num = parseInt(value);
-                            // Nếu nhập số >= 4, tự động thêm 0 phía trước và chuyển field
-                            if (num >= 4 && num <= 9) {
-                                this.value = '0' + value;
-                                setTimeout(() => {
-                                    validate(); // Validate sau khi format
-                                    const monthInput = document.getElementById('birth-month');
-                                    if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                        monthInput.focus();
-                                    }
-                                }, 50);
+                        // Delay để đảm bảo IME hoàn thành xử lý
+                        setTimeout(() => {
+                            const value = this.value;
+                            
+                            // Auto-format: nếu nhập 1 chữ số
+                            if (value.length === 1) {
+                                const num = parseInt(value);
+                                // Nếu nhập số >= 4, tự động thêm 0 phía trước và chuyển field
+                                if (num >= 4 && num <= 9) {
+                                    this.value = '0' + value;
+                                    setTimeout(() => {
+                                        validate(); // Validate sau khi format
+                                        const monthInput = document.getElementById('birth-month');
+                                        if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                            monthInput.focus();
+                                        }
+                                    }, 50);
+                                }
+                                // Nếu nhập 1, 2, 3 hoặc 0, chờ nhập tiếp
+                                else if (num >= 0 && num <= 3) {
+                                    // Chờ nhập ký tự thứ 2
+                                    return;
+                                }
+                                else {
+                                    showFieldError(this, 'Ngày phải từ 01 đến 31');
+                                }
                             }
-                            // Nếu nhập 1, 2, 3 hoặc 0, chờ nhập tiếp
-                            else if (num >= 0 && num <= 3) {
-                                // Chờ nhập ký tự thứ 2
-                                return;
+                            // Nếu đã nhập đủ 2 chữ số
+                            else if (value.length === 2) {
+                                validate();
+                                
+                                // Nếu valid, chuyển sang tháng
+                                const dayValue = parseInt(value);
+                                if (dayValue >= 1 && dayValue <= 31) {
+                                    setTimeout(() => {
+                                        const monthInput = document.getElementById('birth-month');
+                                        if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                            monthInput.focus();
+                                        }
+                                    }, 50);
+                                }
                             }
                             else {
-                                showFieldError(this, 'Ngày phải từ 01 đến 31');
+                                validate();
                             }
-                        }
-                        // Nếu đã nhập đủ 2 chữ số
-                        else if (value.length === 2) {
-                            validate();
-                            
-                            // Nếu valid, chuyển sang tháng
-                            const dayValue = parseInt(value);
-                            if (dayValue >= 1 && dayValue <= 31) {
-                                setTimeout(() => {
-                                    const monthInput = document.getElementById('birth-month');
-                                    if (monthInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                        monthInput.focus();
-                                    }
-                                }, 50);
-                            }
-                        }
-                        else {
-                            validate();
-                        }
+                        }, 10); // Delay ngắn để IME hoàn thành
                     });
                     
                     // Khi blur, tự động thêm 0 nếu chỉ có 1 chữ số và validate
@@ -590,56 +677,57 @@
                     }
                     
                     input.addEventListener('input', function(e) {
-                        const value = this.value;
-                        
-                        // Auto-format: nếu nhập 1 chữ số và blur hoặc nhập tiếp
-                        if (value.length === 1) {
-                            const num = parseInt(value);
-                            // Nếu nhập số >= 2, tự động thêm 0 phía trước và chuyển field
-                            if (num >= 2 && num <= 9) {
-                                this.value = '0' + value;
-                                setTimeout(() => {
-                                    validate(); // Validate sau khi format
-                                    const yearInput = document.getElementById('birth-year');
-                                    if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                        yearInput.focus();
-                                    }
-                                }, 50);
+                        // Delay để đảm bảo IME hoàn thành xử lý
+                        setTimeout(() => {
+                            const value = this.value;
+                            
+                            // Auto-format: nếu nhập 1 chữ số và blur hoặc nhập tiếp
+                            if (value.length === 1) {
+                                const num = parseInt(value);
+                                // Nếu nhập số >= 2, tự động thêm 0 phía trước và chuyển field
+                                if (num >= 2 && num <= 9) {
+                                    this.value = '0' + value;
+                                    setTimeout(() => {
+                                        validate(); // Validate sau khi format
+                                        if (num <= 12) { // Chỉ chuyển field nếu tháng hợp lệ
+                                            const yearInput = document.getElementById('birth-year');
+                                            if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                                yearInput.focus();
+                                            }
+                                        }
+                                    }, 50);
+                                }
+                                // Nếu nhập 1 hoặc 0, chờ nhập tiếp
+                                else if (num >= 0 && num <= 1) {
+                                    // Chờ nhập ký tự thứ 2
+                                    return;
+                                }
+                                else {
+                                    showFieldError(this, 'Tháng phải từ 01 đến 12');
+                                }
                             }
-                            // Nếu nhập 1, chờ nhập tiếp
-                            else if (num === 1) {
-                                // Chờ nhập ký tự thứ 2
-                                return;
-                            }
-                            // Nếu nhập 0, chờ nhập tiếp
-                            else if (num === 0) {
-                                return;
+                            // Nếu đã nhập đủ 2 chữ số
+                            else if (value.length === 2) {
+                                validate();
+                                
+                                // Nếu valid, chuyển sang năm
+                                const monthValue = parseInt(value);
+                                if (monthValue >= 1 && monthValue <= 12) {
+                                    setTimeout(() => {
+                                        const yearInput = document.getElementById('birth-year');
+                                        if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
+                                            yearInput.focus();
+                                        }
+                                    }, 50);
+                                }
                             }
                             else {
-                                showFieldError(this, 'Tháng phải từ 01 đến 12');
+                                validate();
                             }
-                        }
-                        // Nếu đã nhập đủ 2 chữ số
-                        else if (value.length === 2) {
-                            validate();
-                            
-                            // Nếu valid, chuyển sang năm
-                            const monthValue = parseInt(value);
-                            if (monthValue >= 1 && monthValue <= 12) {
-                                setTimeout(() => {
-                                    const yearInput = document.getElementById('birth-year');
-                                    if (yearInput && !input.parentElement.querySelector('.error-message:not([style*="display: none"])')) {
-                                        yearInput.focus();
-                                    }
-                                }, 50);
-                            }
-                        }
-                        else {
-                            validate();
-                        }
+                        }, 10); // Delay ngắn để IME hoàn thành
                     });
                     
-                    // Khi blur, tự động thêm 0 nếu chỉ có 1 chữ số
+                    // Khi blur, tự động thêm 0 nếu chỉ có 1 chữ số và validate
                     input.addEventListener('blur', function() {
                         const value = this.value.trim();
                         if (value.length === 1) {
@@ -651,6 +739,55 @@
                         validate();
                     });
                     
+                    input.addEventListener('keyup', validate);
+                }
+
+                // Validation cho năm (4 chữ số, từ 1900 đến hiện tại)
+                function validateYear(input) {
+                    function validate() {
+                        const value = input.value.trim();
+                        if (value === '') {
+                            clearFieldError(input);
+                            return;
+                        }
+                        
+                        // Kiểm tra format 4 chữ số
+                        if (value.length !== 4) {
+                            showFieldError(input, 'Năm phải có 4 chữ số');
+                            return;
+                        }
+                        
+                        const yearValue = parseInt(value);
+                        const currentYear = new Date().getFullYear();
+                        
+                        if (isNaN(yearValue) || yearValue < 1900 || yearValue > currentYear) {
+                            showFieldError(input, `Năm phải từ 1900 đến ${currentYear}`);
+                        } else {
+                            clearFieldError(input);
+                            
+                            // Re-validate ngày khi năm thay đổi (để kiểm tra năm nhuận)
+                            const dayInput = document.getElementById('birth-day');
+                            const monthInput = document.getElementById('birth-month');
+                            if (dayInput && dayInput.value.length === 2 && monthInput && monthInput.value.length === 2) {
+                                setTimeout(() => {
+                                    validateDay(dayInput);
+                                    validateFullDate();
+                                }, 50);
+                            }
+                            
+                            // Kiểm tra validation tổng hợp
+                            setTimeout(validateFullDate, 100);
+                        }
+                    }
+
+                    input.addEventListener('input', function(e) {
+                        // Delay để đảm bảo IME hoàn thành xử lý
+                        setTimeout(() => {
+                            validate();
+                        }, 10);
+                    });
+                    
+                    input.addEventListener('blur', validate);
                     input.addEventListener('keyup', validate);
                 }
 
